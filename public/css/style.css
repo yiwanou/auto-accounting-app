@@ -206,7 +206,7 @@ body {
   position: relative;
   overflow: hidden;
   border-radius: 12px;
-  background: #f8f9fa;
+  background: linear-gradient(to left, #FF3B30, #FF3B30 120px, #f8f9fa 120px);
 }
 
 .transaction-item {
@@ -239,38 +239,42 @@ body {
   border-left-color: #34C759;
 }
 
-.transaction-item.swipe-active {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+/* 滑动状态 */
+.transaction-item.swipe-warning {
+  background: rgba(255, 180, 180, 0.9) !important;
+  box-shadow: 0 8px 25px rgba(255, 59, 48, 0.2);
 }
 
-/* 删除操作区域 */
-.delete-action {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 80px;
-  background: #FF3B30;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0 12px 12px 0;
-}
-
-.delete-btn {
-  background: none;
-  border: none;
+.transaction-item.swipe-delete {
+  background: rgba(255, 59, 48, 0.95) !important;
   color: white;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: background-color 0.2s ease;
+  box-shadow: 0 8px 25px rgba(255, 59, 48, 0.4);
 }
 
-.delete-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+.transaction-item.swipe-delete .transaction-category,
+.transaction-item.swipe-delete .transaction-description,
+.transaction-item.swipe-delete .currency-info,
+.transaction-item.swipe-delete .transaction-amount {
+  color: white !important;
+}
+
+/* 删除区域背景 */
+.transaction-wrapper::before {
+  content: '🗑️';
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 28px;
+  color: white;
+  opacity: 0.8;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 0;
+}
+
+.transaction-content {
+  position: relative;
+  z-index: 1;
 }
 
 .transaction-info {

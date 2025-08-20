@@ -216,11 +216,6 @@ class AutoAccountingApp {
             ${transaction.type === 'expense' ? '-' : '+'}${displayAmount}
           </div>
         </div>
-        <div class="delete-action">
-          <button class="delete-btn" data-id="${transaction.id}">
-            🗑️ 删除
-          </button>
-        </div>
       </div>
     `;
     
@@ -708,7 +703,8 @@ class AutoAccountingApp {
     let startY = 0;
     let currentX = 0;
     let isSwipping = false;
-    let threshold = 80; // 滑动阈值
+    let deleteThreshold = 120; // 删除阈值
+    let warningThreshold = 60;  // 警告阈值（变红）
     
     // 触摸开始
     element.addEventListener('touchstart', (e) => {
@@ -716,6 +712,14 @@ class AutoAccountingApp {
       startY = e.touches[0].clientY;
       isSwipping = false;
       element.style.transition = '';
+      
+      // 隐藏其他已显示状态的项目
+      document.querySelectorAll('.transaction-item.swipe-warning, .transaction-item.swipe-delete').forEach(item => {
+        if (item !== element) {
+          item.style.transform = 'translateX(0)';
+          item.classList.remove('swipe-warning', 'swipe-delete');
+        }
+      });
     });
     
     // 触摸移动
@@ -734,12 +738,18 @@ class AutoAccountingApp {
         isSwipping = true;
         
         // 只允许向左滑动
-        const translateX = diffX > 0 ? Math.min(diffX, threshold) : 0;
+        const translateX = diffX > 0 ? Math.min(diffX, deleteThreshold) : 0;
         element.style.transform = `translateX(-${translateX}px)`;
         
-        // 显示删除按钮
-        if (translateX > 20) {
-          element.classList.add('swipe-active');
+        // 根据滑动距离改变状态
+        element.classList.remove('swipe-warning', 'swipe-delete');
+        
+        if (translateX >= deleteThreshold) {
+          // 达到删除阈值，变为深红色
+          element.classList.add('swipe-delete');
+        } else if (translateX >= warningThreshold) {
+          // 达到警告阈值，变为浅红色
+          element.classList.add('swipe-warning');
         }
       }
     });
@@ -748,50 +758,45 @@ class AutoAccountingApp {
     element.addEventListener('touchend', (e) => {
       if (!isSwipping) return;
       
-      element.style.transition = 'transform 0.3s ease';
-      
       const diffX = startX - currentX;
+      const translateX = diffX > 0 ? Math.min(diffX, deleteThreshold) : 0;
       
-      // 如果滑动距离超过阈值，显示删除按钮
-      if (diffX >= threshold) {
-        element.style.transform = `translateX(-${threshold}px)`;
-        element.classList.add('swipe-revealed');
+      if (translateX >= deleteThreshold) {
+        // 达到删除阈值，直接删除
+        const transactionId = element.dataset.id;
+        element.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        element.style.transform = 'translateX(-100%)';
+        element.style.opacity = '0';
         
-        // 点击删除按钮时的处理
-        const deleteBtn = element.querySelector('.delete-btn');
-        deleteBtn.onclick = () => {
-          const transactionId = element.dataset.id;
+        setTimeout(() => {
           this.deleteTransaction(transactionId);
-        };
+        }, 300);
+        
       } else {
         // 回弹
+        element.style.transition = 'transform 0.3s ease';
         element.style.transform = 'translateX(0)';
-        element.classList.remove('swipe-active', 'swipe-revealed');
+        element.classList.remove('swipe-warning', 'swipe-delete');
       }
       
       startX = 0;
       currentX = 0;
+      isSwipping = false;
     });
     
-    // 点击其他地方时隐藏删除按钮
+    // 点击时隐藏其他项目的滑动状态
     element.addEventListener('click', (e) => {
-      if (!element.classList.contains('swipe-revealed')) {
-        // 隐藏其他已显示的删除按钮
-        document.querySelectorAll('.transaction-item.swipe-revealed').forEach(item => {
-          if (item !== element) {
-            item.style.transform = 'translateX(0)';
-            item.classList.remove('swipe-active', 'swipe-revealed');
-          }
-        });
-      }
+      document.querySelectorAll('.transaction-item.swipe-warning, .transaction-item.swipe-delete').forEach(item => {
+        if (item !== element) {
+          item.style.transform = 'translateX(0)';
+          item.classList.remove('swipe-warning', 'swipe-delete');
+        }
+      });
     });
   }
 
   async deleteTransaction(transactionId) {
-    if (!confirm('确定要删除这条交易记录吗？')) {
-      return;
-    }
-
+    // 移除确认对话框，让滑动删除更流畅
     // 先从UI中移除该项目（乐观更新）
     const transactionElement = document.querySelector(`[data-id="${transactionId}"]`);
     if (transactionElement) {
