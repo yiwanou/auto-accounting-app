@@ -481,49 +481,53 @@ class AutoAccountingApp {
     }
     
     try {
-      // 检查是否支持快捷指令
-      const shortcutsSupported = 'shortcuts' in window || navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad');
-      
-      if (!shortcutsSupported) {
-        this.showNotification('请先安装快捷指令应用', 'error');
-        return;
-      }
-      
-      // 显示安装说明
-      const instructions = `
-📱 安装快捷指令步骤：
+      // 显示安装选项
+      const choice = confirm(`📱 快捷指令安装方式：
 
-1. 确保已安装"快捷指令"应用
-2. 点击下面的链接安装记账快捷指令
-3. 在快捷指令中允许访问此应用
+方式1（推荐）: 使用iCloud链接安装
+方式2: 下载.shortcut文件手动导入
 
-快捷指令功能：
-• 快速添加支出记录
-• 智能Apple Pay记账
-• 查看余额统计
-      `;
+点击"确定"使用iCloud链接
+点击"取消"查看手动安装说明`);
       
-      if (confirm(instructions + '\n\n点击确定继续安装')) {
-        // 创建安装链接
-        const shortcutData = {
-          name: "自动记账",
-          actions: [
-            {
-              identifier: "is.workflow.actions.url",
-              parameters: {
-                WFURLActionURL: window.location.origin
-              }
-            }
-          ]
-        };
+      if (choice) {
+        // 使用预制的iCloud分享链接（需要你在iPhone上创建并分享）
+        this.showNotification('请在iPhone快捷指令应用中创建并分享快捷指令，然后替换此链接', 'info');
         
-        const encodedData = encodeURIComponent(JSON.stringify(shortcutData));
-        const shortcutURL = `shortcuts://shortcuts/import?data=${encodedData}`;
+        // 临时解决方案：提供手动创建指南
+        const guide = `📱 手动创建快捷指令：
+
+1. 打开快捷指令应用
+2. 点击右上角"+"创建新快捷指令
+3. 添加以下操作：
+   • 询问输入 → 金额（数字）
+   • 询问输入 → 类别（菜单选择）
+   • 询问输入 → 描述（文本）
+   • 获取URL内容 → POST到：
+     ${window.location.origin}/api/transactions
+   • 显示通知 → "记账成功"
+
+4. 保存为"快速记账"`;
         
-        // 尝试打开快捷指令app
-        window.open(shortcutURL, '_blank');
+        alert(guide);
+      } else {
+        // 提供文件下载方式
+        const downloadGuide = `📥 文件安装方式：
+
+1. 下载快捷指令文件
+2. 在iPhone上打开文件
+3. 选择用快捷指令应用打开
+4. 按提示完成安装
+
+注意：需要在设置中允许不受信任的快捷指令`;
         
-        this.showNotification('正在打开快捷指令应用...', 'info');
+        if (confirm(downloadGuide + '\n\n点击确定下载文件')) {
+          // 创建下载链接
+          const link = document.createElement('a');
+          link.href = '/shortcuts/smart-accounting.shortcut';
+          link.download = 'smart-accounting.shortcut';
+          link.click();
+        }
       }
     } catch (error) {
       console.error('安装快捷指令失败:', error);
