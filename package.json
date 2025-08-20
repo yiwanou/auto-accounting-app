@@ -2,10 +2,11 @@
   "name": "auto-accounting-app",
   "version": "1.0.0",
   "description": "自动记账应用",
-  "main": "src/app.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
+    "start": "node server.js",
+    "start:full": "node src/app.js",
+    "dev": "nodemon server.js",
     "test": "jest",
     "build": "npm install --production"
   },

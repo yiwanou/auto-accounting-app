@@ -367,14 +367,18 @@ app.use((req, res) => {
 });
 
 // 启动服务器
-app.listen(port, () => {
-  console.log(`自动记账应用运行在 http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`自动记账应用运行在端口 ${port}`);
+  console.log('NODE_ENV:', process.env.NODE_ENV);
   console.log('支持功能:');
   console.log('- Apple Pay 自动记账');
   console.log('- LCL银行卡交易处理');
   console.log('- 短信自动解析');
   console.log('- iOS快捷指令集成');
   console.log('- PWA支持');
+}).on('error', (err) => {
+  console.error('服务器启动失败:', err);
+  process.exit(1);
 });
 
 // 优雅关闭

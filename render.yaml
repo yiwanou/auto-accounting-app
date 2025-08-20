@@ -2,11 +2,9 @@ services:
   - type: web
     name: auto-accounting-app
     env: node
-    buildCommand: npm install --only=production
+    buildCommand: npm install
     startCommand: npm start
-    healthCheckPath: /api/balance
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
