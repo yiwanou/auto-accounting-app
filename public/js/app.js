@@ -451,26 +451,83 @@ class AutoAccountingApp {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                   (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
     
+    // 为了测试，先不隐藏iOS功能，但会显示提示信息
     if (!isIOS) {
-      document.getElementById('ios-integration').style.display = 'none';
+      const iosSection = document.getElementById('ios-integration');
+      if (iosSection) {
+        const warning = document.createElement('div');
+        warning.className = 'ios-warning';
+        warning.style.cssText = `
+          background: #fff3cd;
+          color: #856404;
+          padding: 10px;
+          border-radius: 5px;
+          margin-bottom: 10px;
+          text-align: center;
+          font-size: 14px;
+        `;
+        warning.textContent = '📱 iOS功能需要在iPhone或iPad上使用';
+        iosSection.insertBefore(warning, iosSection.firstChild);
+      }
     }
   }
 
   async installShortcuts() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (!isIOS) {
+      this.showNotification('请在iPhone或iPad上打开此页面来安装快捷指令', 'info');
+      return;
+    }
+    
     try {
-      const response = await fetch('/api/ios/shortcuts');
-      const shortcutsData = await response.json();
+      // 检查是否支持快捷指令
+      const shortcutsSupported = 'shortcuts' in window || navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad');
       
-      // 生成快捷指令安装URL
-      const shortcutURL = `shortcuts://shortcuts/import?url=${encodeURIComponent(window.location.origin + '/api/ios/shortcuts')}`;
+      if (!shortcutsSupported) {
+        this.showNotification('请先安装快捷指令应用', 'error');
+        return;
+      }
       
-      // 尝试打开快捷指令app
-      window.location.href = shortcutURL;
+      // 显示安装说明
+      const instructions = `
+📱 安装快捷指令步骤：
+
+1. 确保已安装"快捷指令"应用
+2. 点击下面的链接安装记账快捷指令
+3. 在快捷指令中允许访问此应用
+
+快捷指令功能：
+• 快速添加支出记录
+• 智能Apple Pay记账
+• 查看余额统计
+      `;
       
-      this.showNotification('正在打开快捷指令应用...', 'info');
+      if (confirm(instructions + '\n\n点击确定继续安装')) {
+        // 创建安装链接
+        const shortcutData = {
+          name: "自动记账",
+          actions: [
+            {
+              identifier: "is.workflow.actions.url",
+              parameters: {
+                WFURLActionURL: window.location.origin
+              }
+            }
+          ]
+        };
+        
+        const encodedData = encodeURIComponent(JSON.stringify(shortcutData));
+        const shortcutURL = `shortcuts://shortcuts/import?data=${encodedData}`;
+        
+        // 尝试打开快捷指令app
+        window.open(shortcutURL, '_blank');
+        
+        this.showNotification('正在打开快捷指令应用...', 'info');
+      }
     } catch (error) {
       console.error('安装快捷指令失败:', error);
-      this.showNotification('请手动下载快捷指令应用并配置', 'error');
+      this.showNotification('安装失败，请手动配置快捷指令', 'error');
     }
   }
 
