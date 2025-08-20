@@ -55,10 +55,31 @@ class AutoAccountingApp {
       });
     });
 
-    // 表单提交
-    document.getElementById('transaction-form').addEventListener('submit', (e) => {
+    // 表单提交 - 支持移动端
+    const transactionForm = document.getElementById('transaction-form');
+    transactionForm.addEventListener('submit', (e) => {
       this.handleTransactionSubmit(e);
     });
+    
+    // 为移动端添加触摸事件处理
+    const submitBtn = transactionForm.querySelector('.submit-btn');
+    if (submitBtn) {
+      // 添加触摸反馈
+      submitBtn.addEventListener('touchstart', function() {
+        this.style.transform = 'scale(0.95)';
+      });
+      
+      submitBtn.addEventListener('touchend', function() {
+        setTimeout(() => {
+          this.style.transform = 'scale(1)';
+        }, 150);
+      });
+      
+      // 防止双击缩放
+      submitBtn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+      });
+    }
 
     document.getElementById('sms-form').addEventListener('submit', (e) => {
       this.handleSMSSubmit(e);
@@ -271,18 +292,36 @@ class AutoAccountingApp {
 
   async handleTransactionSubmit(e) {
     e.preventDefault();
+    e.stopPropagation();
     
-    const formData = new FormData(e.target);
-    const transactionData = {
-      amount: parseFloat(formData.get('amount')),
-      category: formData.get('category'),
-      description: formData.get('description'),
-      date: formData.get('date'),
-      type: formData.get('type'),
-      currency: formData.get('currency') || 'EUR'
-    };
+    // 防止重复提交
+    const submitBtn = e.target.querySelector('.submit-btn');
+    if (submitBtn.disabled) return;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = '保存中...';
     
     try {
+      const formData = new FormData(e.target);
+      const transactionData = {
+        amount: parseFloat(formData.get('amount')),
+        category: formData.get('category'),
+        description: formData.get('description'),
+        date: formData.get('date'),
+        type: formData.get('type'),
+        currency: formData.get('currency') || 'EUR'
+      };
+      
+      // 数据验证
+      if (!transactionData.amount || transactionData.amount <= 0) {
+        throw new Error('请输入有效的金额');
+      }
+      if (!transactionData.description.trim()) {
+        throw new Error('请输入描述');
+      }
+      
+      console.log('提交数据:', transactionData);
+      
       const response = await fetch('/api/transactions', {
         method: 'POST',
         headers: {
@@ -291,7 +330,9 @@ class AutoAccountingApp {
         body: JSON.stringify(transactionData)
       });
       
+      console.log('响应状态:', response.status);
       const data = await response.json();
+      console.log('响应数据:', data);
       
       if (data.success) {
         // 关闭模态框
@@ -308,11 +349,15 @@ class AutoAccountingApp {
         
         this.showNotification('交易记录添加成功', 'success');
       } else {
-        this.showNotification(data.errors ? data.errors.join(', ') : '添加失败', 'error');
+        this.showNotification(data.errors ? data.errors.join(', ') : data.error || '添加失败', 'error');
       }
     } catch (error) {
       console.error('添加交易记录失败:', error);
-      this.showNotification('添加失败，请重试', 'error');
+      this.showNotification(error.message || '添加失败，请重试', 'error');
+    } finally {
+      // 恢复按钮状态
+      submitBtn.disabled = false;
+      submitBtn.textContent = '保存';
     }
   }
 

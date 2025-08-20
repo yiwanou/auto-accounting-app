@@ -458,19 +458,45 @@ body {
 
 .submit-btn {
   width: 100%;
-  padding: 14px;
+  padding: 16px;
   background: #007AFF;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  min-height: 50px;
+  position: relative;
+  overflow: hidden;
 }
 
 .submit-btn:hover {
-  background: #6B8B7A;
+  background: #0056CC;
+}
+
+.submit-btn:active {
+  background: #004499;
+  transform: scale(0.98);
+}
+
+.submit-btn:disabled {
+  background: #8E8E93;
+  cursor: not-allowed;
+}
+
+/* 为移动端添加更大的触摸区域 */
+@media (max-width: 768px) {
+  .submit-btn {
+    padding: 18px;
+    font-size: 1.2rem;
+    min-height: 55px;
+  }
 }
 
 /* Apple Pay 解析结果样式 */
