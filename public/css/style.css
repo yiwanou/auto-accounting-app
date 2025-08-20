@@ -310,13 +310,17 @@ body {
 .load-more-btn {
   width: 100%;
   padding: 12px;
-  background: #f8f9fa;
-  border: 1px solid #e5e5e7;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid #e5e5e7;
+  border-radius: 12px;
   color: #007AFF;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  display: none; /* 默认隐藏 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .load-more-btn:hover {

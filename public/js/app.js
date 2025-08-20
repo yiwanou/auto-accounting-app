@@ -14,6 +14,9 @@ class AutoAccountingApp {
     this.loadTransactions();
     this.loadTodayStats();
     this.checkiOSEnvironment();
+    
+    // 初始化加载更多按钮状态
+    document.getElementById('load-more-btn').style.display = 'none';
   }
 
   bindEvents() {
@@ -135,9 +138,23 @@ class AutoAccountingApp {
           this.transactions = [...this.transactions, ...data.data];
         }
         this.renderTransactions();
+        this.updateLoadMoreButton(data.data.length, data.total || 0);
       }
     } catch (error) {
       console.error('加载交易记录失败:', error);
+    }
+  }
+
+  updateLoadMoreButton(currentBatchSize, totalCount) {
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    const loadedCount = this.transactions.length;
+    
+    // 只有在还有更多数据时才显示按钮
+    if (totalCount > loadedCount && currentBatchSize === this.pageSize) {
+      loadMoreBtn.style.display = 'block';
+      loadMoreBtn.textContent = `加载更多 (还有 ${totalCount - loadedCount} 条)`;
+    } else {
+      loadMoreBtn.style.display = 'none';
     }
   }
 
@@ -152,18 +169,12 @@ class AutoAccountingApp {
     try {
       this.currentPage++;
       await this.loadTransactions();
-      
-      // 如果没有更多数据，隐藏按钮
-      if (this.transactions.length < (this.currentPage + 1) * this.pageSize) {
-        loadMoreBtn.style.display = 'none';
-      }
     } catch (error) {
       console.error('加载更多数据失败:', error);
       this.showNotification('加载失败，请重试', 'error');
       this.currentPage--; // 回退页数
     } finally {
       loadMoreBtn.disabled = false;
-      loadMoreBtn.textContent = '加载更多';
     }
   }
 
@@ -781,6 +792,13 @@ class AutoAccountingApp {
       return;
     }
 
+    // 先从UI中移除该项目（乐观更新）
+    const transactionElement = document.querySelector(`[data-id="${transactionId}"]`);
+    if (transactionElement) {
+      transactionElement.style.opacity = '0.5';
+      transactionElement.style.pointerEvents = 'none';
+    }
+
     try {
       const response = await fetch(`/api/transactions/${transactionId}`, {
         method: 'DELETE'
@@ -789,17 +807,34 @@ class AutoAccountingApp {
       const data = await response.json();
 
       if (data.success) {
-        // 重新加载数据
-        this.currentPage = 0;
+        // 从数组中移除
+        this.transactions = this.transactions.filter(t => t.id !== transactionId);
+        
+        // 重新渲染交易列表
+        this.renderTransactions();
+        
+        // 更新余额和统计
         await this.loadBalance();
-        await this.loadTransactions();
         await this.loadTodayStats();
+        
+        // 重新计算加载更多按钮
+        await this.loadTransactions();
         
         this.showNotification('交易记录删除成功', 'success');
       } else {
+        // 删除失败，恢复UI状态
+        if (transactionElement) {
+          transactionElement.style.opacity = '1';
+          transactionElement.style.pointerEvents = 'auto';
+        }
         this.showNotification(data.message || '删除失败', 'error');
       }
     } catch (error) {
+      // 删除失败，恢复UI状态
+      if (transactionElement) {
+        transactionElement.style.opacity = '1';
+        transactionElement.style.pointerEvents = 'auto';
+      }
       console.error('删除交易记录失败:', error);
       this.showNotification('删除失败，请重试', 'error');
     }

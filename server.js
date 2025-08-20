@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 内存存储（简化版）
+// 内存存储（简化版）- 添加更多演示数据用于测试分页
 let transactions = [
   {
     id: 'demo_1',
@@ -46,9 +46,33 @@ let transactions = [
     exchange_rate: 1.05,
     amount_in_eur: 48.09,
     created_at: '2025-08-19T15:30:00Z'
+  },
+  {
+    id: 'demo_4',
+    amount: 12.40,
+    category: '交通',
+    description: 'SBB 火车票',
+    date: '2025-08-18',
+    type: 'expense',
+    currency: 'CHF',
+    exchange_rate: 1.05,
+    amount_in_eur: 13.02,
+    created_at: '2025-08-18T08:15:00Z'
+  },
+  {
+    id: 'demo_5',
+    amount: 85.00,
+    category: '娱乐',
+    description: '电影院',
+    date: '2025-08-18',
+    type: 'expense',
+    currency: 'EUR',
+    exchange_rate: 1.0,
+    amount_in_eur: 85.00,
+    created_at: '2025-08-18T20:00:00Z'
   }
 ];
-let nextId = 4;
+let nextId = 6;
 
 // 健康检查
 app.get('/health', (req, res) => {
