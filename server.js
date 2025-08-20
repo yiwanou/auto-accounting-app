@@ -151,6 +151,147 @@ app.post('/api/transactions', async (req, res) => {
   }
 });
 
+// 获取单个交易记录
+app.get('/api/transactions/:id', async (req, res) => {
+  try {
+    await ensureDbInitialized();
+    
+    const id = req.params.id;
+    
+    // UUID格式验证
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({
+        success: false,
+        message: '无效的交易记录ID格式'
+      });
+    }
+    
+    const result = await TransactionQueries.getById(id);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '交易记录未找到'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('获取交易记录失败:', error);
+    res.status(500).json({
+      success: false,
+      error: '获取交易记录失败',
+      message: error.message
+    });
+  }
+});
+
+// 更新交易记录
+app.put('/api/transactions/:id', async (req, res) => {
+  try {
+    await ensureDbInitialized();
+    
+    const id = req.params.id;
+    const { amount, category, description, date, type, currency = 'EUR' } = req.body;
+    
+    // UUID格式验证
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({
+        success: false,
+        message: '无效的交易记录ID格式'
+      });
+    }
+    
+    // 输入验证（与添加记录相同的验证逻辑）
+    if (!amount || !category || !description || !date || !type) {
+      return res.status(400).json({
+        success: false,
+        error: '缺少必要字段'
+      });
+    }
+    
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0 || amountNum > 1000000) {
+      return res.status(400).json({
+        success: false,
+        error: '金额必须是大于0且小于1,000,000的数字'
+      });
+    }
+    
+    if (!['income', 'expense'].includes(type)) {
+      return res.status(400).json({
+        success: false,
+        error: '交易类型必须是income或expense'
+      });
+    }
+    
+    if (!['EUR', 'CHF', 'USD', 'CNY'].includes(currency)) {
+      return res.status(400).json({
+        success: false,
+        error: '不支持的货币类型'
+      });
+    }
+    
+    if (description.length > 200) {
+      return res.status(400).json({
+        success: false,
+        error: '描述不能超过200个字符'
+      });
+    }
+    
+    // 汇率转换
+    const exchangeRates = {
+      'EUR': 1.0,
+      'CHF': 1.05,
+      'USD': 1.18,
+      'CNY': 0.13
+    };
+    
+    const rate = exchangeRates[currency];
+    const amountInEUR = amountNum * rate;
+    
+    const transactionData = {
+      amount: amountNum,
+      category: category.trim(),
+      description: description.trim(),
+      date,
+      type,
+      currency,
+      exchange_rate: rate,
+      amount_in_eur: amountInEUR
+    };
+    
+    const result = await TransactionQueries.update(id, transactionData);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '交易记录未找到'
+      });
+    }
+    
+    console.log('更新交易记录:', result.rows[0]);
+    
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: '交易记录更新成功'
+    });
+  } catch (error) {
+    console.error('更新交易记录失败:', error);
+    res.status(500).json({
+      success: false,
+      error: '更新交易记录失败',
+      message: error.message
+    });
+  }
+});
+
 // 删除交易记录
 app.delete('/api/transactions/:id', async (req, res) => {
   try {

@@ -4,6 +4,7 @@ class AutoAccountingApp {
     this.balance = { balance: 0, income: 0, expense: 0 };
     this.currentPage = 0;
     this.pageSize = 20;
+    this.editingTransaction = null; // 当前编辑的交易记录
     
     this.init();
   }
@@ -91,19 +92,40 @@ class AutoAccountingApp {
   async loadTransactions() {
     try {
       const response = await fetch(`/api/transactions?limit=${this.pageSize}&offset=${this.currentPage * this.pageSize}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
       
       if (data.success) {
         if (this.currentPage === 0) {
-          this.transactions = data.data;
+          this.transactions = data.data || [];
         } else {
-          this.transactions = [...this.transactions, ...data.data];
+          this.transactions = [...this.transactions, ...(data.data || [])];
         }
         this.renderTransactions();
-        this.updateLoadMoreButton(data.data.length, data.total || 0);
+        this.updateLoadMoreButton((data.data || []).length, data.total || 0);
+      } else {
+        console.error('API返回错误:', data.error || data.message);
+        this.showNotification(data.error || data.message || '加载交易记录失败', 'error');
+        
+        // 如果是首次加载，显示空状态
+        if (this.currentPage === 0) {
+          this.transactions = [];
+          this.renderTransactions();
+        }
       }
     } catch (error) {
       console.error('加载交易记录失败:', error);
+      this.showNotification('网络错误或服务器无响应', 'error');
+      
+      // 如果是首次加载，显示空状态
+      if (this.currentPage === 0) {
+        this.transactions = [];
+        this.renderTransactions();
+      }
     }
   }
 
@@ -147,7 +169,23 @@ class AutoAccountingApp {
       container.innerHTML = '';
     }
     
-    this.transactions.slice(this.currentPage * this.pageSize).forEach(transaction => {
+    // 获取当前页的数据
+    const startIndex = this.currentPage * this.pageSize;
+    const pageTransactions = this.transactions.slice(startIndex, startIndex + this.pageSize);
+    
+    if (pageTransactions.length === 0 && this.currentPage === 0) {
+      // 显示无数据提示
+      container.innerHTML = `
+        <div class="no-transactions" style="text-align: center; padding: 40px; color: #86868b;">
+          <div style="font-size: 3rem; margin-bottom: 16px;">📝</div>
+          <div style="font-size: 1.1rem; margin-bottom: 8px;">还没有交易记录</div>
+          <div style="font-size: 0.9rem;">点击上方按钮开始记账吧！</div>
+        </div>
+      `;
+      return;
+    }
+    
+    pageTransactions.forEach(transaction => {
       const element = this.createTransactionElement(transaction);
       container.appendChild(element);
     });
@@ -174,8 +212,13 @@ class AutoAccountingApp {
             <div class="transaction-description">${transaction.description}</div>
             <div class="currency-info">${new Date(transaction.date).toLocaleDateString('zh-CN')}</div>
           </div>
-          <div class="transaction-amount ${transaction.type}">
-            ${transaction.type === 'expense' ? '-' : '+'}${displayAmount}
+          <div class="transaction-right">
+            <div class="transaction-amount ${transaction.type}">
+              ${transaction.type === 'expense' ? '-' : '+'}${displayAmount}
+            </div>
+            <button class="edit-btn" onclick="app.editTransaction('${transaction.id}')" title="编辑">
+              ✏️
+            </button>
           </div>
         </div>
       </div>
@@ -241,17 +284,42 @@ class AutoAccountingApp {
     }
   }
 
-  showTransactionModal(type) {
+  showTransactionModal(type, transaction = null) {
     const modal = document.getElementById('add-transaction-modal');
+    const form = document.getElementById('transaction-form');
     const title = document.getElementById('modal-title');
     const typeInput = document.getElementById('type');
     const categorySelect = document.getElementById('category');
     
-    title.textContent = type === 'expense' ? '添加支出' : '添加收入';
-    typeInput.value = type;
+    // 清空之前的数据
+    form.reset();
+    form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+    form.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+    
+    if (transaction) {
+      // 编辑模式
+      this.editingTransaction = transaction;
+      title.textContent = transaction.type === 'expense' ? '编辑支出' : '编辑收入';
+      typeInput.value = transaction.type;
+      
+      // 填充表单数据
+      document.getElementById('amount').value = transaction.amount;
+      document.getElementById('description').value = transaction.description;
+      document.getElementById('currency').value = transaction.currency;
+      document.getElementById('date').value = transaction.date;
+    } else {
+      // 添加模式
+      this.editingTransaction = null;
+      title.textContent = type === 'expense' ? '添加支出' : '添加收入';
+      typeInput.value = type;
+      // 设置默认日期
+      document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    }
+    
+    const currentType = this.editingTransaction ? this.editingTransaction.type : type;
     
     // 更新分类选项
-    if (type === 'income') {
+    if (currentType === 'income') {
       categorySelect.innerHTML = `
         <option value="工资">💰 工资</option>
         <option value="投资收益">📈 投资收益</option>
@@ -270,10 +338,30 @@ class AutoAccountingApp {
       `;
     }
     
-    // 设置默认日期
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    // 如果是编辑模式，设置当前分类
+    if (transaction) {
+      categorySelect.value = transaction.category;
+    }
     
     modal.style.display = 'block';
+  }
+
+  // 编辑交易记录
+  async editTransaction(transactionId) {
+    try {
+      // 获取交易记录详情
+      const response = await fetch(`/api/transactions/${transactionId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        this.showTransactionModal(data.data.type, data.data);
+      } else {
+        this.showNotification('无法获取交易记录详情', 'error');
+      }
+    } catch (error) {
+      console.error('获取交易记录失败:', error);
+      this.showNotification('网络错误，请重试', 'error');
+    }
   }
 
 
@@ -451,15 +539,29 @@ class AutoAccountingApp {
         currency: formData.get('currency') || 'EUR'
       };
       
-      const response = await fetch('/api/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(transactionData)
-      });
+      let response, data;
       
-      const data = await response.json();
+      if (this.editingTransaction) {
+        // 编辑模式 - PUT 请求
+        response = await fetch(`/api/transactions/${this.editingTransaction.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(transactionData)
+        });
+      } else {
+        // 添加模式 - POST 请求
+        response = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(transactionData)
+        });
+      }
+      
+      data = await response.json();
       
       if (data.success) {
         // 关闭模态框
@@ -476,12 +578,17 @@ class AutoAccountingApp {
         await this.loadTransactions();
         await this.loadTodayStats();
         
-        this.showNotification('交易记录添加成功', 'success');
+        const message = this.editingTransaction ? '交易记录更新成功' : '交易记录添加成功';
+        this.showNotification(message, 'success');
+        
+        // 清空编辑状态
+        this.editingTransaction = null;
       } else {
-        this.showNotification(data.error || '添加失败', 'error');
+        const errorMessage = this.editingTransaction ? '更新失败' : '添加失败';
+        this.showNotification(data.error || errorMessage, 'error');
       }
     } catch (error) {
-      console.error('添加交易记录失败:', error);
+      console.error('保存交易记录失败:', error);
       this.showNotification('网络错误，请重试', 'error');
     } finally {
       // 恢复按钮状态

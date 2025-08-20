@@ -131,6 +131,33 @@ const TransactionQueries = {
     return await query(queryText, [id]);
   },
   
+  // 根据ID获取单个交易记录
+  async getById(id) {
+    const queryText = `
+      SELECT id, amount, category, description, date, type, currency, 
+             exchange_rate, amount_in_eur, created_at, updated_at
+      FROM transactions 
+      WHERE id = $1
+    `;
+    return await query(queryText, [id]);
+  },
+  
+  // 更新交易记录
+  async update(id, transactionData) {
+    const { amount, category, description, date, type, currency, exchange_rate, amount_in_eur } = transactionData;
+    
+    const queryText = `
+      UPDATE transactions 
+      SET amount = $2, category = $3, description = $4, date = $5, 
+          type = $6, currency = $7, exchange_rate = $8, amount_in_eur = $9,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING *
+    `;
+    
+    return await query(queryText, [id, amount, category, description, date, type, currency, exchange_rate, amount_in_eur]);
+  },
+  
   // 获取余额统计
   async getBalance() {
     const queryText = `
