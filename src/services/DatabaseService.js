@@ -3,7 +3,7 @@ const path = require('path');
 
 class DatabaseService {
   constructor() {
-    this.dbPath = path.join(__dirname, '../../data/accounting.db');
+    this.dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/accounting.db');
     this.db = null;
     this.init();
   }
