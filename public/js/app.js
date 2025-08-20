@@ -473,66 +473,124 @@ class AutoAccountingApp {
   }
 
   async installShortcuts() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    // 显示详细的快捷指令创建教程
+    this.showShortcutTutorial();
+  }
+
+  showShortcutTutorial() {
+    // 创建教程模态框
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
     
-    if (!isIOS) {
-      this.showNotification('请在iPhone或iPad上打开此页面来安装快捷指令', 'info');
-      return;
-    }
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+        <span class="close">&times;</span>
+        <h2>📱 创建快捷指令教程</h2>
+        
+        <div class="tutorial-section">
+          <h3>第一步：打开快捷指令应用</h3>
+          <p>在iPhone上找到"快捷指令"应用并打开</p>
+        </div>
+        
+        <div class="tutorial-section">
+          <h3>第二步：创建新快捷指令</h3>
+          <ol>
+            <li>点击右上角的 <strong>"+"</strong> 按钮</li>
+            <li>点击 <strong>"添加操作"</strong></li>
+          </ol>
+        </div>
+        
+        <div class="tutorial-section">
+          <h3>第三步：添加操作步骤</h3>
+          <div class="action-step">
+            <h4>1️⃣ 添加"询问输入"操作</h4>
+            <ul>
+              <li>搜索"询问输入"</li>
+              <li>提示文字：<code>请输入支出金额</code></li>
+              <li>输入类型：<code>数字</code></li>
+            </ul>
+          </div>
+          
+          <div class="action-step">
+            <h4>2️⃣ 添加第二个"询问输入"操作</h4>
+            <ul>
+              <li>提示文字：<code>选择消费类别</code></li>
+              <li>输入类型：<code>从菜单中选择</code></li>
+              <li>菜单项目：餐饮、交通、娱乐、日用品、医疗、服装、教育、其他</li>
+            </ul>
+          </div>
+          
+          <div class="action-step">
+            <h4>3️⃣ 添加第三个"询问输入"操作</h4>
+            <ul>
+              <li>提示文字：<code>请输入消费描述</code></li>
+              <li>输入类型：<code>文本</code></li>
+            </ul>
+          </div>
+          
+          <div class="action-step">
+            <h4>4️⃣ 添加"获取URL内容"操作</h4>
+            <ul>
+              <li>URL：<code>${window.location.origin}/api/transactions</code></li>
+              <li>方法：<code>POST</code></li>
+              <li>请求体：选择<code>JSON</code></li>
+              <li>JSON内容：
+                <pre>{
+  "amount": "询问输入的结果",
+  "category": "所选菜单项目", 
+  "description": "询问输入的结果",
+  "type": "expense",
+  "currency": "EUR",
+  "date": "当前日期"
+}</pre>
+              </li>
+            </ul>
+          </div>
+          
+          <div class="action-step">
+            <h4>5️⃣ 添加"显示通知"操作</h4>
+            <ul>
+              <li>标题：<code>记账成功</code></li>
+              <li>正文：<code>支出已记录</code></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="tutorial-section">
+          <h3>第四步：保存快捷指令</h3>
+          <ol>
+            <li>点击右上角 <strong>"下一步"</strong></li>
+            <li>输入名称：<strong>"快速记账"</strong></li>
+            <li>选择图标（可选）</li>
+            <li>点击 <strong>"完成"</strong></li>
+          </ol>
+        </div>
+        
+        <div class="tutorial-section">
+          <h3>✅ 使用方法</h3>
+          <p>创建完成后，可以通过以下方式使用：</p>
+          <ul>
+            <li>在快捷指令应用中直接运行</li>
+            <li>添加到主屏幕作为快捷方式</li>
+            <li>通过Siri语音："嘿Siri，快速记账"</li>
+            <li>在控制中心添加快捷指令按钮</li>
+          </ul>
+        </div>
+        
+        <button class="submit-btn" onclick="this.closest('.modal').remove()">我知道了</button>
+      </div>
+    `;
     
-    try {
-      // 显示安装选项
-      const choice = confirm(`📱 快捷指令安装方式：
-
-方式1（推荐）: 使用iCloud链接安装
-方式2: 下载.shortcut文件手动导入
-
-点击"确定"使用iCloud链接
-点击"取消"查看手动安装说明`);
-      
-      if (choice) {
-        // 使用预制的iCloud分享链接（需要你在iPhone上创建并分享）
-        this.showNotification('请在iPhone快捷指令应用中创建并分享快捷指令，然后替换此链接', 'info');
-        
-        // 临时解决方案：提供手动创建指南
-        const guide = `📱 手动创建快捷指令：
-
-1. 打开快捷指令应用
-2. 点击右上角"+"创建新快捷指令
-3. 添加以下操作：
-   • 询问输入 → 金额（数字）
-   • 询问输入 → 类别（菜单选择）
-   • 询问输入 → 描述（文本）
-   • 获取URL内容 → POST到：
-     ${window.location.origin}/api/transactions
-   • 显示通知 → "记账成功"
-
-4. 保存为"快速记账"`;
-        
-        alert(guide);
-      } else {
-        // 提供文件下载方式
-        const downloadGuide = `📥 文件安装方式：
-
-1. 下载快捷指令文件
-2. 在iPhone上打开文件
-3. 选择用快捷指令应用打开
-4. 按提示完成安装
-
-注意：需要在设置中允许不受信任的快捷指令`;
-        
-        if (confirm(downloadGuide + '\n\n点击确定下载文件')) {
-          // 创建下载链接
-          const link = document.createElement('a');
-          link.href = '/shortcuts/smart-accounting.shortcut';
-          link.download = 'smart-accounting.shortcut';
-          link.click();
-        }
-      }
-    } catch (error) {
-      console.error('安装快捷指令失败:', error);
-      this.showNotification('安装失败，请手动配置快捷指令', 'error');
-    }
+    document.body.appendChild(modal);
+    
+    // 添加关闭功能
+    modal.querySelector('.close').onclick = () => modal.remove();
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.remove();
+    };
+    
+    this.showNotification('快捷指令教程已打开，请按步骤创建', 'info');
   }
 
   showInstallPrompt() {

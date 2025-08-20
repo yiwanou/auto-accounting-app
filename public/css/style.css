@@ -519,3 +519,66 @@ body {
     color: #007AFF;
   }
 }
+
+/* 快捷指令教程样式 */
+.tutorial-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e5e7;
+}
+
+.tutorial-section:last-child {
+  border-bottom: none;
+}
+
+.tutorial-section h3 {
+  color: #007AFF;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.tutorial-section h4 {
+  color: #1d1d1f;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 16px 0 8px 0;
+}
+
+.action-step {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.action-step ul, .tutorial-section ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.action-step li, .tutorial-section li {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.tutorial-section code {
+  background: #e5e5e7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 0.9rem;
+  color: #007AFF;
+}
+
+.tutorial-section pre {
+  background: #1c1c1e;
+  color: #f5f5f7;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin: 8px 0;
+}
