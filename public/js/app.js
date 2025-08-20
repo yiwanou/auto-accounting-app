@@ -34,8 +34,16 @@ class AutoAccountingApp {
       this.showApplePayModal();
     });
 
-    // 加载更多按钮
-    document.getElementById('load-more-btn').addEventListener('click', () => {
+    // 加载更多按钮 - 支持移动端
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    loadMoreBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.loadMoreTransactions();
+    });
+    
+    // 移动端触摸处理
+    loadMoreBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
       this.loadMoreTransactions();
     });
 
@@ -134,8 +142,29 @@ class AutoAccountingApp {
   }
 
   async loadMoreTransactions() {
-    this.currentPage++;
-    await this.loadTransactions();
+    // 防止重复点击
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn.disabled) return;
+    
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.textContent = '加载中...';
+    
+    try {
+      this.currentPage++;
+      await this.loadTransactions();
+      
+      // 如果没有更多数据，隐藏按钮
+      if (this.transactions.length < (this.currentPage + 1) * this.pageSize) {
+        loadMoreBtn.style.display = 'none';
+      }
+    } catch (error) {
+      console.error('加载更多数据失败:', error);
+      this.showNotification('加载失败，请重试', 'error');
+      this.currentPage--; // 回退页数
+    } finally {
+      loadMoreBtn.disabled = false;
+      loadMoreBtn.textContent = '加载更多';
+    }
   }
 
   renderTransactions() {

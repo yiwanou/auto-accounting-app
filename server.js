@@ -10,8 +10,45 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 内存存储（简化版）
-let transactions = [];
-let nextId = 1;
+let transactions = [
+  {
+    id: 'demo_1',
+    amount: 25.50,
+    category: '餐饮',
+    description: 'Starbucks 咖啡',
+    date: '2025-08-20',
+    type: 'expense',
+    currency: 'CHF',
+    exchange_rate: 1.05,
+    amount_in_eur: 26.78,
+    created_at: '2025-08-20T10:00:00Z'
+  },
+  {
+    id: 'demo_2',
+    amount: 1200.00,
+    category: '工资',
+    description: '月薪',
+    date: '2025-08-19',
+    type: 'income',
+    currency: 'EUR',
+    exchange_rate: 1.0,
+    amount_in_eur: 1200.00,
+    created_at: '2025-08-19T09:00:00Z'
+  },
+  {
+    id: 'demo_3',
+    amount: 45.80,
+    category: '日用品',
+    description: 'Migros 购物',
+    date: '2025-08-19',
+    type: 'expense',
+    currency: 'CHF',
+    exchange_rate: 1.05,
+    amount_in_eur: 48.09,
+    created_at: '2025-08-19T15:30:00Z'
+  }
+];
+let nextId = 4;
 
 // 健康检查
 app.get('/health', (req, res) => {
