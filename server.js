@@ -1,78 +1,31 @@
 const express = require('express');
 const path = require('path');
+const { initDatabase, TransactionQueries } = require('./src/database');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // 中间件
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 内存存储（简化版）- 添加更多演示数据用于测试分页
-let transactions = [
-  {
-    id: 'demo_1',
-    amount: 25.50,
-    category: '餐饮',
-    description: 'Starbucks 咖啡',
-    date: '2025-08-20',
-    type: 'expense',
-    currency: 'CHF',
-    exchange_rate: 1.05,
-    amount_in_eur: 26.78,
-    created_at: '2025-08-20T10:00:00Z'
-  },
-  {
-    id: 'demo_2',
-    amount: 1200.00,
-    category: '工资',
-    description: '月薪',
-    date: '2025-08-19',
-    type: 'income',
-    currency: 'EUR',
-    exchange_rate: 1.0,
-    amount_in_eur: 1200.00,
-    created_at: '2025-08-19T09:00:00Z'
-  },
-  {
-    id: 'demo_3',
-    amount: 45.80,
-    category: '日用品',
-    description: 'Migros 购物',
-    date: '2025-08-19',
-    type: 'expense',
-    currency: 'CHF',
-    exchange_rate: 1.05,
-    amount_in_eur: 48.09,
-    created_at: '2025-08-19T15:30:00Z'
-  },
-  {
-    id: 'demo_4',
-    amount: 12.40,
-    category: '交通',
-    description: 'SBB 火车票',
-    date: '2025-08-18',
-    type: 'expense',
-    currency: 'CHF',
-    exchange_rate: 1.05,
-    amount_in_eur: 13.02,
-    created_at: '2025-08-18T08:15:00Z'
-  },
-  {
-    id: 'demo_5',
-    amount: 85.00,
-    category: '娱乐',
-    description: '电影院',
-    date: '2025-08-18',
-    type: 'expense',
-    currency: 'EUR',
-    exchange_rate: 1.0,
-    amount_in_eur: 85.00,
-    created_at: '2025-08-18T20:00:00Z'
+// 安全中间件
+app.use((req, res, next) => {
+  res.header('X-Content-Type-Options', 'nosniff');
+  res.header('X-Frame-Options', 'DENY');
+  res.header('X-XSS-Protection', '1; mode=block');
+  next();
+});
+
+// 数据库初始化
+let dbInitialized = false;
+async function ensureDbInitialized() {
+  if (!dbInitialized) {
+    await initDatabase();
+    dbInitialized = true;
   }
-];
-let nextId = 6;
+}
 
 // 健康检查
 app.get('/health', (req, res) => {
@@ -85,33 +38,75 @@ app.get('/', (req, res) => {
 });
 
 // 获取交易记录
-app.get('/api/transactions', (req, res) => {
-  const { limit = 100, offset = 0 } = req.query;
-  const start = parseInt(offset);
-  const count = parseInt(limit);
-  
-  const result = transactions
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(start, start + count);
+app.get('/api/transactions', async (req, res) => {
+  try {
+    await ensureDbInitialized();
     
-  res.json({
-    success: true,
-    data: result,
-    count: result.length,
-    total: transactions.length
-  });
+    const { limit = 100, offset = 0, start_date, end_date } = req.query;
+    const limitNum = Math.min(parseInt(limit) || 100, 1000); // 最大1000条
+    const offsetNum = parseInt(offset) || 0;
+    
+    const result = await TransactionQueries.getAll(limitNum, offsetNum, start_date, end_date);
+    const total = await TransactionQueries.getCount(start_date, end_date);
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      count: result.rowCount,
+      total: total
+    });
+  } catch (error) {
+    console.error('获取交易记录失败:', error);
+    res.status(500).json({
+      success: false,
+      error: '获取交易记录失败',
+      message: error.message
+    });
+  }
 });
 
 // 添加交易记录
-app.post('/api/transactions', (req, res) => {
+app.post('/api/transactions', async (req, res) => {
   try {
+    await ensureDbInitialized();
+    
     const { amount, category, description, date, type, currency = 'EUR' } = req.body;
     
-    // 基础验证
+    // 输入验证
     if (!amount || !category || !description || !date || !type) {
       return res.status(400).json({
         success: false,
         error: '缺少必要字段'
+      });
+    }
+    
+    // 数据类型和范围验证
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0 || amountNum > 1000000) {
+      return res.status(400).json({
+        success: false,
+        error: '金额必须是大于0且小于1,000,000的数字'
+      });
+    }
+    
+    if (!['income', 'expense'].includes(type)) {
+      return res.status(400).json({
+        success: false,
+        error: '交易类型必须是income或expense'
+      });
+    }
+    
+    if (!['EUR', 'CHF', 'USD', 'CNY'].includes(currency)) {
+      return res.status(400).json({
+        success: false,
+        error: '不支持的货币类型'
+      });
+    }
+    
+    if (description.length > 200) {
+      return res.status(400).json({
+        success: false,
+        error: '描述不能超过200个字符'
       });
     }
     
@@ -123,82 +118,141 @@ app.post('/api/transactions', (req, res) => {
       'CNY': 0.13
     };
     
-    const rate = exchangeRates[currency] || 1.0;
-    const amountInEUR = parseFloat(amount) * rate;
+    const rate = exchangeRates[currency];
+    const amountInEUR = amountNum * rate;
     
-    const transaction = {
-      id: 'txn_' + nextId++,
-      amount: parseFloat(amount),
-      category,
-      description,
+    const transactionData = {
+      amount: amountNum,
+      category: category.trim(),
+      description: description.trim(),
       date,
       type,
       currency,
       exchange_rate: rate,
-      amount_in_eur: amountInEUR,
-      created_at: new Date().toISOString()
+      amount_in_eur: amountInEUR
     };
     
-    transactions.push(transaction);
+    const result = await TransactionQueries.create(transactionData);
     
-    console.log('新交易记录:', transaction);
+    console.log('新交易记录:', result.rows[0]);
     
     res.status(201).json({
       success: true,
-      data: transaction,
+      data: result.rows[0],
       message: '交易记录添加成功'
     });
   } catch (error) {
     console.error('添加交易记录失败:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: '添加交易记录失败',
+      message: error.message
     });
   }
 });
 
 // 删除交易记录
-app.delete('/api/transactions/:id', (req, res) => {
-  const id = req.params.id;
-  const index = transactions.findIndex(t => t.id === id);
-  
-  if (index === -1) {
-    return res.status(404).json({
+app.delete('/api/transactions/:id', async (req, res) => {
+  try {
+    await ensureDbInitialized();
+    
+    const id = req.params.id;
+    
+    // UUID格式验证
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({
+        success: false,
+        message: '无效的交易记录ID格式'
+      });
+    }
+    
+    const result = await TransactionQueries.delete(id);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '交易记录未找到'
+      });
+    }
+    
+    console.log('删除交易记录:', result.rows[0]);
+    
+    res.json({
+      success: true,
+      message: '交易记录删除成功',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('删除交易记录失败:', error);
+    res.status(500).json({
       success: false,
-      message: '交易记录未找到'
+      error: '删除交易记录失败',
+      message: error.message
     });
   }
-  
-  transactions.splice(index, 1);
-  
-  res.json({
-    success: true,
-    message: '交易记录删除成功'
-  });
 });
 
 // 获取余额
-app.get('/api/balance', (req, res) => {
-  const income = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + (t.amount_in_eur || t.amount), 0);
+app.get('/api/balance', async (req, res) => {
+  try {
+    await ensureDbInitialized();
     
-  const expense = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + (t.amount_in_eur || t.amount), 0);
+    const result = await TransactionQueries.getBalance();
+    const balanceData = result.rows[0];
     
-  res.json({
-    success: true,
-    data: {
-      balance: income - expense,
-      income: income,
-      expense: expense
-    }
-  });
+    res.json({
+      success: true,
+      data: {
+        balance: parseFloat(balanceData.balance),
+        income: parseFloat(balanceData.income),
+        expense: parseFloat(balanceData.expense)
+      }
+    });
+  } catch (error) {
+    console.error('获取余额失败:', error);
+    res.status(500).json({
+      success: false,
+      error: '获取余额失败',
+      message: error.message
+    });
+  }
+});
+
+// 获取统计数据（为图表功能准备）
+app.get('/api/stats', async (req, res) => {
+  try {
+    await ensureDbInitialized();
+    
+    const { start_date, end_date } = req.query;
+    const categoryStats = await TransactionQueries.getCategoryStats(start_date, end_date);
+    
+    res.json({
+      success: true,
+      data: {
+        categoryStats: categoryStats.rows
+      }
+    });
+  } catch (error) {
+    console.error('获取统计数据失败:', error);
+    res.status(500).json({
+      success: false,
+      error: '获取统计数据失败',
+      message: error.message
+    });
+  }
 });
 
 // 启动服务器
-app.listen(port, () => {
-  console.log(`简化版记账应用运行在端口 ${port}`);
+app.listen(port, async () => {
+  console.log(`自动记账应用运行在端口 ${port}`);
   console.log('NODE_ENV:', process.env.NODE_ENV);
+  
+  try {
+    await ensureDbInitialized();
+    console.log('数据库连接成功');
+  } catch (error) {
+    console.error('数据库初始化失败:', error);
+    process.exit(1);
+  }
 });
