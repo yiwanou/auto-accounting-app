@@ -196,12 +196,14 @@ class AutoAccountingApp {
     wrapper.className = 'transaction-wrapper';
     
     const currencySymbol = this.getCurrencySymbol(transaction.currency || 'EUR');
-    const formattedAmount = `${currencySymbol}${transaction.amount.toFixed(2)}`;
+    const amount = parseFloat(transaction.amount);
+    const formattedAmount = `${currencySymbol}${amount.toFixed(2)}`;
     
     // 如果不是EUR，显示原始金额和EUR等值
     let displayAmount = formattedAmount;
     if (transaction.currency && transaction.currency !== 'EUR' && transaction.amount_in_eur) {
-      displayAmount += ` (€${transaction.amount_in_eur.toFixed(2)})`;
+      const amountInEur = parseFloat(transaction.amount_in_eur);
+      displayAmount += ` (€${amountInEur.toFixed(2)})`;
     }
     
     wrapper.innerHTML = `
@@ -269,11 +271,11 @@ class AutoAccountingApp {
         const todayTransactions = data.data;
         const income = todayTransactions
           .filter(t => t.type === 'income')
-          .reduce((sum, t) => sum + (t.amount_in_eur || t.amount), 0);
+          .reduce((sum, t) => sum + parseFloat(t.amount_in_eur || t.amount), 0);
         
         const expense = todayTransactions
           .filter(t => t.type === 'expense')
-          .reduce((sum, t) => sum + (t.amount_in_eur || t.amount), 0);
+          .reduce((sum, t) => sum + parseFloat(t.amount_in_eur || t.amount), 0);
         
         document.getElementById('today-income').textContent = `€${income.toFixed(2)}`;
         document.getElementById('today-expense').textContent = `€${expense.toFixed(2)}`;
@@ -303,10 +305,10 @@ class AutoAccountingApp {
       typeInput.value = transaction.type;
       
       // 填充表单数据
-      document.getElementById('amount').value = transaction.amount;
+      document.getElementById('amount').value = parseFloat(transaction.amount);
       document.getElementById('description').value = transaction.description;
       document.getElementById('currency').value = transaction.currency;
-      document.getElementById('date').value = transaction.date;
+      document.getElementById('date').value = transaction.date.split('T')[0]; // 只取日期部分
     } else {
       // 添加模式
       this.editingTransaction = null;
