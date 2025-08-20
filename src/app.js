@@ -11,17 +11,48 @@ const iOSIntegration = require('./services/iOSIntegration');
 const app = express();
 const port = process.env.PORT || 3000;
 
+console.log('启动应用...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', port);
+
 // 初始化服务
-const db = new DatabaseService();
-const paymentProcessor = new PaymentProcessor();
-const smartApplePayProcessor = new SmartApplePayProcessor();
-const iOSService = new iOSIntegration();
+let db, paymentProcessor, smartApplePayProcessor, iOSService;
+
+try {
+  console.log('初始化数据库服务...');
+  db = new DatabaseService();
+  
+  console.log('初始化支付处理服务...');
+  paymentProcessor = new PaymentProcessor();
+  smartApplePayProcessor = new SmartApplePayProcessor();
+  
+  console.log('初始化iOS集成服务...');
+  iOSService = new iOSIntegration();
+  
+  console.log('所有服务初始化完成');
+} catch (error) {
+  console.error('服务初始化失败:', error);
+  process.exit(1);
+}
 
 // 中间件
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
+
+// 健康检查端点
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 // PWA manifest
 app.get('/manifest.json', (req, res) => {
@@ -77,17 +108,18 @@ app.post('/api/transactions', async (req, res) => {
       req.body.currency || 'EUR'
     );
     
-    // 设置汇率
+    // 设置汇率（相对于欧元）
     const exchangeRates = {
-      'EUR': 1,
-      'CHF': 0.95,
-      'USD': 0.85,
-      'CNY': 0.13
+      'EUR': 1.0,
+      'CHF': 1.05,  // 1 CHF = 1.05 EUR
+      'USD': 1.18,  // 1 USD = 1.18 EUR  
+      'CNY': 0.13   // 1 CNY = 0.13 EUR
     };
     
-    if (exchangeRates[transaction.currency]) {
-      transaction.setExchangeRate(exchangeRates[transaction.currency]);
-    }
+    const rate = exchangeRates[transaction.currency] || 1.0;
+    transaction.setExchangeRate(rate);
+    
+    console.log(`货币转换: ${transaction.amount} ${transaction.currency} -> ${transaction.amountInEUR} EUR (汇率: ${rate})`);
     
     const result = await db.addTransaction(transaction);
     

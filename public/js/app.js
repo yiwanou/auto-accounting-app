@@ -131,8 +131,8 @@ class AutoAccountingApp {
   }
 
   createTransactionElement(transaction) {
-    const div = document.createElement('div');
-    div.className = `transaction-item ${transaction.type}`;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'transaction-wrapper';
     
     const currencySymbol = this.getCurrencySymbol(transaction.currency || 'EUR');
     const formattedAmount = `${currencySymbol}${transaction.amount.toFixed(2)}`;
@@ -143,18 +143,30 @@ class AutoAccountingApp {
       displayAmount += ` (€${transaction.amount_in_eur.toFixed(2)})`;
     }
     
-    div.innerHTML = `
-      <div class="transaction-info">
-        <div class="transaction-category">${this.getCategoryIcon(transaction.category)} ${transaction.category}</div>
-        <div class="transaction-description">${transaction.description}</div>
-        <div class="currency-info">${new Date(transaction.date).toLocaleDateString('zh-CN')}</div>
-      </div>
-      <div class="transaction-amount ${transaction.type}">
-        ${transaction.type === 'expense' ? '-' : '+'}${displayAmount}
+    wrapper.innerHTML = `
+      <div class="transaction-item ${transaction.type}" data-id="${transaction.id}">
+        <div class="transaction-content">
+          <div class="transaction-info">
+            <div class="transaction-category">${this.getCategoryIcon(transaction.category)} ${transaction.category}</div>
+            <div class="transaction-description">${transaction.description}</div>
+            <div class="currency-info">${new Date(transaction.date).toLocaleDateString('zh-CN')}</div>
+          </div>
+          <div class="transaction-amount ${transaction.type}">
+            ${transaction.type === 'expense' ? '-' : '+'}${displayAmount}
+          </div>
+        </div>
+        <div class="delete-action">
+          <button class="delete-btn" data-id="${transaction.id}">
+            🗑️ 删除
+          </button>
+        </div>
       </div>
     `;
     
-    return div;
+    // 添加滑动事件
+    this.addSwipeEvents(wrapper.querySelector('.transaction-item'));
+    
+    return wrapper;
   }
 
   getCurrencySymbol(currency) {
@@ -606,6 +618,119 @@ class AutoAccountingApp {
     alert(installInstructions);
   }
 
+  addSwipeEvents(element) {
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let isSwipping = false;
+    let threshold = 80; // 滑动阈值
+    
+    // 触摸开始
+    element.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isSwipping = false;
+      element.style.transition = '';
+    });
+    
+    // 触摸移动
+    element.addEventListener('touchmove', (e) => {
+      if (!startX) return;
+      
+      currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      
+      const diffX = startX - currentX;
+      const diffY = Math.abs(startY - currentY);
+      
+      // 只有横向滑动才触发
+      if (Math.abs(diffX) > diffY && Math.abs(diffX) > 10) {
+        e.preventDefault();
+        isSwipping = true;
+        
+        // 只允许向左滑动
+        const translateX = diffX > 0 ? Math.min(diffX, threshold) : 0;
+        element.style.transform = `translateX(-${translateX}px)`;
+        
+        // 显示删除按钮
+        if (translateX > 20) {
+          element.classList.add('swipe-active');
+        }
+      }
+    });
+    
+    // 触摸结束
+    element.addEventListener('touchend', (e) => {
+      if (!isSwipping) return;
+      
+      element.style.transition = 'transform 0.3s ease';
+      
+      const diffX = startX - currentX;
+      
+      // 如果滑动距离超过阈值，显示删除按钮
+      if (diffX >= threshold) {
+        element.style.transform = `translateX(-${threshold}px)`;
+        element.classList.add('swipe-revealed');
+        
+        // 点击删除按钮时的处理
+        const deleteBtn = element.querySelector('.delete-btn');
+        deleteBtn.onclick = () => {
+          const transactionId = element.dataset.id;
+          this.deleteTransaction(transactionId);
+        };
+      } else {
+        // 回弹
+        element.style.transform = 'translateX(0)';
+        element.classList.remove('swipe-active', 'swipe-revealed');
+      }
+      
+      startX = 0;
+      currentX = 0;
+    });
+    
+    // 点击其他地方时隐藏删除按钮
+    element.addEventListener('click', (e) => {
+      if (!element.classList.contains('swipe-revealed')) {
+        // 隐藏其他已显示的删除按钮
+        document.querySelectorAll('.transaction-item.swipe-revealed').forEach(item => {
+          if (item !== element) {
+            item.style.transform = 'translateX(0)';
+            item.classList.remove('swipe-active', 'swipe-revealed');
+          }
+        });
+      }
+    });
+  }
+
+  async deleteTransaction(transactionId) {
+    if (!confirm('确定要删除这条交易记录吗？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // 重新加载数据
+        this.currentPage = 0;
+        await this.loadBalance();
+        await this.loadTransactions();
+        await this.loadTodayStats();
+        
+        this.showNotification('交易记录删除成功', 'success');
+      } else {
+        this.showNotification(data.message || '删除失败', 'error');
+      }
+    } catch (error) {
+      console.error('删除交易记录失败:', error);
+      this.showNotification('删除失败，请重试', 'error');
+    }
+  }
+
   showNotification(message, type = 'info') {
     // 创建通知元素
     const notification = document.createElement('div');
@@ -671,8 +796,9 @@ class AutoAccountingApp {
 }
 
 // 应用初始化
+let app; // 全局变量，供删除按钮使用
 document.addEventListener('DOMContentLoaded', () => {
-  const app = new AutoAccountingApp();
+  app = new AutoAccountingApp();
   
   // 注册PWA
   app.registerServiceWorker();

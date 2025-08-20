@@ -202,22 +202,75 @@ body {
   margin-bottom: 16px;
 }
 
+.transaction-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f8f9fa;
+}
+
 .transaction-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  border-left: 4px solid transparent;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.transaction-content {
+  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid transparent;
+  padding: 16px;
 }
 
 .transaction-item.expense {
-  border-left-color: #F28585;
+  border-left-color: #FF3B30;
 }
 
 .transaction-item.income {
-  border-left-color: #F2B263;
+  border-left-color: #34C759;
+}
+
+.transaction-item.swipe-active {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* 删除操作区域 */
+.delete-action {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  background: #FF3B30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 12px 12px 0;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.delete-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .transaction-info {
