@@ -1,0 +1,474 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #F2E8DF;
+  color: #1d1d1f;
+  line-height: 1.6;
+}
+
+#app {
+  max-width: 428px;
+  margin: 0 auto;
+  background: white;
+  min-height: 100vh;
+}
+
+/* 头部样式 */
+.header {
+  background: linear-gradient(135deg, #86A69D, #F2B263);
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.balance-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.balance-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.balance-amount {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+/* 快速操作按钮 */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 10px;
+  padding: 20px;
+  background: white;
+}
+
+.action-btn {
+  background: white;
+  border: 2px solid #e5e5e7;
+  border-radius: 12px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  border-color: #86A69D;
+  box-shadow: 0 4px 12px rgba(134, 166, 157, 0.15);
+}
+
+.expense-btn:hover {
+  border-color: #F28585;
+  box-shadow: 0 4px 12px rgba(242, 133, 133, 0.15);
+}
+
+.income-btn:hover {
+  border-color: #F2B263;
+  box-shadow: 0 4px 12px rgba(242, 178, 99, 0.15);
+}
+
+.test-btn:hover {
+  border-color: #86A69D;
+  box-shadow: 0 4px 12px rgba(134, 166, 157, 0.15);
+}
+
+.btn-icon {
+  font-size: 1.5rem;
+}
+
+/* 统计区域 */
+.today-stats, .recent-transactions, .ios-integration {
+  margin: 0 20px 20px 20px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.today-stats h2, .recent-transactions h2, .ios-integration h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1d1d1f;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 12px 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #86868b;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.stat-value.income {
+  color: #F2B263;
+}
+
+.stat-value.expense {
+  color: #F28585;
+}
+
+/* 交易记录列表 */
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid transparent;
+}
+
+.transaction-item.expense {
+  border-left-color: #F28585;
+}
+
+.transaction-item.income {
+  border-left-color: #F2B263;
+}
+
+.transaction-info {
+  flex: 1;
+}
+
+.transaction-category {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.transaction-description {
+  font-size: 0.8rem;
+  color: #86868b;
+}
+
+.transaction-amount {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.transaction-amount.expense {
+  color: #F28585;
+}
+
+.transaction-amount.income {
+  color: #F2B263;
+}
+
+.currency-info {
+  font-size: 0.7rem;
+  color: #86868b;
+  margin-top: 2px;
+}
+
+.load-more-btn {
+  width: 100%;
+  padding: 12px;
+  background: #f8f9fa;
+  border: 1px solid #e5e5e7;
+  border-radius: 8px;
+  color: #007AFF;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.load-more-btn:hover {
+  background: #e5e5e7;
+}
+
+/* iOS集成 */
+.integration-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.integration-btn {
+  flex: 1;
+  padding: 12px;
+  background: #86A69D;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.integration-btn:hover {
+  background: #6B8B7A;
+}
+
+.integration-info {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.integration-info p {
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #1d1d1f;
+}
+
+.integration-info ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.integration-info li {
+  padding: 4px 0;
+  font-size: 0.9rem;
+  color: #86868b;
+  position: relative;
+  padding-left: 20px;
+}
+
+.integration-info li:before {
+  content: "✓";
+  color: #34C759;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+/* 模态框样式 */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: white;
+  margin: 10% auto;
+  padding: 24px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #86868b;
+}
+
+.close:hover {
+  color: #1d1d1f;
+}
+
+.modal h2 {
+  margin-bottom: 20px;
+  color: #1d1d1f;
+  font-size: 1.3rem;
+}
+
+/* 表单样式 */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #1d1d1f;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e5e7;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none;
+  border-color: #007AFF;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: #007AFF;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.submit-btn:hover {
+  background: #6B8B7A;
+}
+
+/* Apple Pay 解析结果样式 */
+.parse-result {
+  margin-top: 20px;
+  padding: 16px;
+  background: #F2E8DF;
+  border-radius: 8px;
+  border: 1px solid #F2C6C2;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #F2C6C2;
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.confidence {
+  color: #86A69D;
+  font-weight: bold;
+}
+
+.parse-result h3 {
+  margin-bottom: 12px;
+  color: #86A69D;
+  font-size: 1.1rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 428px) {
+  .quick-actions {
+    padding: 16px;
+  }
+  
+  .today-stats, .recent-transactions, .ios-integration {
+    margin: 0 16px 16px 16px;
+    padding: 16px;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 5% auto;
+    padding: 20px;
+  }
+  
+  .stats-grid {
+    gap: 12px;
+  }
+  
+  .action-btn {
+    padding: 14px 10px;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #000;
+    color: #f5f5f7;
+  }
+  
+  #app {
+    background: #1c1c1e;
+  }
+  
+  .today-stats, .recent-transactions, .ios-integration {
+    background: #2c2c2e;
+  }
+  
+  .modal-content {
+    background-color: #2c2c2e;
+  }
+  
+  .action-btn {
+    background: #2c2c2e;
+    border-color: #48484a;
+    color: #f5f5f7;
+  }
+  
+  .form-group input, .form-group select, .form-group textarea {
+    background: #1c1c1e;
+    border-color: #48484a;
+    color: #f5f5f7;
+  }
+  
+  .stat-item, .transaction-item, .integration-info {
+    background: #1c1c1e;
+  }
+  
+  .load-more-btn {
+    background: #2c2c2e;
+    border-color: #48484a;
+    color: #007AFF;
+  }
+}

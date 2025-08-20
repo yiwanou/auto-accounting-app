@@ -1,0 +1,67 @@
+{
+  "WFWorkflowMinimumClientVersionString": "1113",
+  "WFWorkflowMinimumClientVersion": 1113,
+  "WFWorkflowIcon": {
+    "WFWorkflowIconStartColor": 431817727,
+    "WFWorkflowIconGlyphNumber": 59729
+  },
+  "WFWorkflowClientVersion": "2605.0.5",
+  "WFWorkflowOutputContentItemClasses": [],
+  "WFWorkflowHasOutputFallback": false,
+  "WFWorkflowActions": [
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "Value": {
+            "string": "https://your-app.railway.app/api/balance",
+            "attachmentsByRange": {}
+          },
+          "WFSerializationType": "WFTextTokenString"
+        }
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
+      "WFWorkflowActionParameters": {
+        "WFHTTPMethod": "GET"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFDictionaryKey": "data"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFDictionaryKey": "balance"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.format",
+      "WFWorkflowActionParameters": {
+        "WFFormatString": "💰 当前余额: €{balance}\n\n📊 统计信息:\n💚 总收入: €{income}\n🔴 总支出: €{expense}",
+        "balance": "￼",
+        "income": "￼", 
+        "expense": "￼"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.shownotification",
+      "WFWorkflowActionParameters": {}
+    }
+  ],
+  "WFWorkflowImportQuestions": [],
+  "WFWorkflowTypes": [
+    "Watch",
+    "NCWidget", 
+    "Siri"
+  ],
+  "WFQuickActionSurfaces": [],
+  "WFWorkflowInputContentItemClasses": [
+    "WFStringContentItem"
+  ],
+  "WFWorkflowHasShortcutInputVariables": false
+}

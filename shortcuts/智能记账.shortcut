@@ -1,0 +1,147 @@
+{
+  "WFWorkflowMinimumClientVersionString": "1113",
+  "WFWorkflowMinimumClientVersion": 1113,
+  "WFWorkflowIcon": {
+    "WFWorkflowIconStartColor": 2846468607,
+    "WFWorkflowIconGlyphNumber": 59511
+  },
+  "WFWorkflowClientVersion": "2605.0.5",
+  "WFWorkflowOutputContentItemClasses": [],
+  "WFWorkflowHasOutputFallback": false,
+  "WFWorkflowActions": [
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.ask",
+      "WFWorkflowActionParameters": {
+        "WFAskActionPrompt": "输入Apple Pay交易信息\n例如：MIGROS CHF 25.50",
+        "WFInputType": "Text",
+        "WFAskActionDefaultAnswerPrefix": "Text"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "Value": {
+            "string": "https://your-app.railway.app/api/transactions/apple-pay/parse",
+            "attachmentsByRange": {}
+          },
+          "WFSerializationType": "WFTextTokenString"
+        }
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
+      "WFWorkflowActionParameters": {
+        "WFHTTPMethod": "POST",
+        "WFJSONValues": {
+          "Value": {
+            "WFDictionaryFieldValueItems": [
+              {
+                "WFItemType": 0,
+                "WFKey": {
+                  "Value": {
+                    "string": "rawText",
+                    "attachmentsByRange": {}
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                },
+                "WFValue": {
+                  "Value": {
+                    "string": "￼",
+                    "attachmentsByRange": {
+                      "{0, 1}": {
+                        "OutputUUID": "ask-action-output"
+                      }
+                    }
+                  },
+                  "WFSerializationType": "WFTextTokenString"
+                }
+              }
+            ]
+          },
+          "WFSerializationType": "WFDictionaryFieldValue"
+        },
+        "WFHTTPBodyType": "JSON"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFDictionaryKey": "success"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": 4,
+        "WFConditionalActionString": true,
+        "GroupingIdentifier": "success-check"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFDictionaryKey": "transaction"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFDictionaryKey": "formattedAmount"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "Value": {
+            "string": "✅ 记账成功！\n金额：￼",
+            "attachmentsByRange": {
+              "{9, 1}": {
+                "OutputUUID": "formatted-amount"
+              }
+            }
+          },
+          "WFSerializationType": "WFTextTokenString"
+        }
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.shownotification",
+      "WFWorkflowActionParameters": {}
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.otherwise",
+      "WFWorkflowActionParameters": {
+        "GroupingIdentifier": "success-check"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.shownotification",
+      "WFWorkflowActionParameters": {
+        "WFNotificationActionBody": "❌ 记账失败，请检查输入格式"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.endconditional",
+      "WFWorkflowActionParameters": {
+        "GroupingIdentifier": "success-check"
+      }
+    }
+  ],
+  "WFWorkflowImportQuestions": [],
+  "WFWorkflowTypes": [
+    "Watch",
+    "NCWidget",
+    "Siri"
+  ],
+  "WFQuickActionSurfaces": [],
+  "WFWorkflowInputContentItemClasses": [
+    "WFAppStoreAppContentItem",
+    "WFArticleContentItem", 
+    "WFContactContentItem",
+    "WFDateContentItem",
+    "WFEmailAddressContentItem"
+  ],
+  "WFWorkflowHasShortcutInputVariables": false
+}

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动记账</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="自动记账">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <h1>自动记账</h1>
+            <div class="balance-display">
+                <span class="balance-label">余额</span>
+                <span id="balance-amount" class="balance-amount">¥0.00</span>
+            </div>
+        </header>
+
+        <!-- 快速操作按钮 -->
+        <section class="quick-actions">
+            <button id="add-expense-btn" class="action-btn expense-btn">
+                <span class="btn-icon">💰</span>
+                <span>记支出</span>
+            </button>
+            <button id="add-income-btn" class="action-btn income-btn">
+                <span class="btn-icon">💵</span>
+                <span>记收入</span>
+            </button>
+            <button id="scan-sms-btn" class="action-btn scan-btn">
+                <span class="btn-icon">📱</span>
+                <span>扫描短信</span>
+            </button>
+            <button id="test-applepay-btn" class="action-btn test-btn">
+                <span class="btn-icon">🍎</span>
+                <span>测试Apple Pay</span>
+            </button>
+        </section>
+
+        <!-- 今日统计 -->
+        <section class="today-stats">
+            <h2>今日统计</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">收入</span>
+                    <span id="today-income" class="stat-value income">¥0.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">支出</span>
+                    <span id="today-expense" class="stat-value expense">¥0.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">结余</span>
+                    <span id="today-balance" class="stat-value">¥0.00</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 最近交易 -->
+        <section class="recent-transactions">
+            <h2>最近交易</h2>
+            <div id="transactions-list" class="transactions-list">
+                <!-- 交易记录将在这里动态加载 -->
+            </div>
+            <button id="load-more-btn" class="load-more-btn">加载更多</button>
+        </section>
+
+        <!-- iOS集成提示 -->
+        <section class="ios-integration" id="ios-integration">
+            <h2>iOS集成</h2>
+            <div class="integration-options">
+                <button id="install-shortcuts-btn" class="integration-btn">
+                    <span class="btn-icon">⚡</span>
+                    <span>安装快捷指令</span>
+                </button>
+                <button id="add-to-homescreen-btn" class="integration-btn">
+                    <span class="btn-icon">📱</span>
+                    <span>添加到主屏幕</span>
+                </button>
+            </div>
+            <div class="integration-info">
+                <p>配置完成后，你可以：</p>
+                <ul>
+                    <li>通过Siri语音记账</li>
+                    <li>在主屏幕快速查看余额</li>
+                    <li>自动识别Apple Pay交易</li>
+                    <li>解析银行短信记录</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <!-- 添加交易模态框 -->
+    <div id="add-transaction-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">添加交易</h2>
+            <form id="transaction-form">
+                <div class="form-group">
+                    <label for="amount">金额</label>
+                    <input type="number" id="amount" name="amount" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="category">分类</label>
+                    <select id="category" name="category" required>
+                        <option value="餐饮">🍽️ 餐饮</option>
+                        <option value="交通">🚗 交通</option>
+                        <option value="娱乐">🎮 娱乐</option>
+                        <option value="日用品">🛒 日用品</option>
+                        <option value="医疗">❤️ 医疗</option>
+                        <option value="服装">👕 服装</option>
+                        <option value="教育">📚 教育</option>
+                        <option value="其他">📁 其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="description">描述</label>
+                    <input type="text" id="description" name="description" required>
+                </div>
+                <div class="form-group">
+                    <label for="currency">货币</label>
+                    <select id="currency" name="currency" required>
+                        <option value="EUR">€ 欧元 (EUR)</option>
+                        <option value="CHF">CHF 瑞士法郎</option>
+                        <option value="USD">$ 美元 (USD)</option>
+                        <option value="CNY">¥ 人民币 (CNY)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="date">日期</label>
+                    <input type="date" id="date" name="date" required>
+                </div>
+                <input type="hidden" id="type" name="type" value="expense">
+                <button type="submit" class="submit-btn">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SMS解析模态框 -->
+    <div id="sms-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>短信解析记账</h2>
+            <form id="sms-form">
+                <div class="form-group">
+                    <label for="sms-content">粘贴银行短信内容</label>
+                    <textarea id="sms-content" name="smsContent" rows="4" 
+                        placeholder="例如：LCL: 您的卡尾号1234于12月15日在CARREFOUR消费EUR 45.60" required></textarea>
+                </div>
+                <button type="submit" class="submit-btn">解析并记账</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Apple Pay测试模态框 -->
+    <div id="applepay-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>🍎 Apple Pay智能识别测试</h2>
+            <form id="applepay-form">
+                <div class="form-group">
+                    <label for="applepay-content">模拟Apple Pay交易信息</label>
+                    <textarea id="applepay-content" name="rawText" rows="3" 
+                        placeholder="例如：MIGROS CHF 25.50&#10;SBB CFF FFS 12.40 CHF&#10;Starbucks EUR 4.95" required></textarea>
+                </div>
+                <button type="submit" class="submit-btn">智能解析</button>
+            </form>
+            <div id="applepay-result" class="parse-result" style="display: none;">
+                <h3>解析结果</h3>
+                <div id="result-content"></div>
+                <button id="confirm-applepay" class="submit-btn" style="margin-top: 10px;">确认添加到账本</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
