@@ -623,10 +623,99 @@ body {
   font-size: 1.1rem;
 }
 
+/* 统计图表样式 */
+.stats-charts, .detailed-stats {
+  margin: 0 25px 25px 25px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 24px;
+  padding: 25px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stats-charts h2, .detailed-stats h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #1d1d1f;
+  text-align: center;
+}
+
+.chart-container {
+  position: relative;
+  height: 300px;
+  margin-bottom: 20px;
+}
+
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-card h3 {
+  font-size: 0.9rem;
+  color: #86868b;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.stat-card .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.stat-card.expense .value {
+  color: #FF3B30;
+}
+
+.stat-card.income .value {
+  color: #34C759;
+}
+
+.stats-btn:hover {
+  background: rgba(255, 149, 0, 0.1);
+  box-shadow: 0 15px 35px rgba(255, 149, 0, 0.2);
+}
+
+.back-btn:hover {
+  background: rgba(142, 142, 147, 0.1);
+  box-shadow: 0 15px 35px rgba(142, 142, 147, 0.2);
+}
+
+/* 快速操作按钮网格调整 */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 20px;
+  padding: 30px;
+  background: transparent;
+}
+
+.quick-actions.stats-mode {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-gap: 15px;
+}
+
 /* 响应式设计 */
 @media (max-width: 428px) {
   .quick-actions {
     padding: 16px;
+    grid-gap: 12px;
+  }
+  
+  .quick-actions.stats-mode {
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 12px;
   }
   
   .today-stats, .recent-transactions, .ios-integration {

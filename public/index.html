@@ -13,6 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="自动记账">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div id="app">
@@ -34,6 +35,14 @@
             <button id="add-income-btn" class="action-btn income-btn">
                 <span class="btn-icon">💵</span>
                 <span>记收入</span>
+            </button>
+            <button id="view-stats-btn" class="action-btn stats-btn">
+                <span class="btn-icon">📊</span>
+                <span>统计图表</span>
+            </button>
+            <button id="back-to-main-btn" class="action-btn back-btn" style="display: none;">
+                <span class="btn-icon">🔙</span>
+                <span>返回首页</span>
             </button>
         </section>
 
@@ -88,6 +97,32 @@
                 </ul>
             </div>
         </section>
+
+        <!-- 统计页面 -->
+        <div id="stats-page" style="display: none;">
+            <!-- 统计图表区域 -->
+            <section class="stats-charts">
+                <h2>📊 支出分类统计</h2>
+                <div class="chart-container">
+                    <canvas id="category-chart"></canvas>
+                </div>
+            </section>
+
+            <section class="stats-charts">
+                <h2>📈 收支趋势</h2>
+                <div class="chart-container">
+                    <canvas id="trend-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- 详细统计数据 -->
+            <section class="detailed-stats">
+                <h2>📋 详细统计</h2>
+                <div id="stats-summary" class="stats-summary">
+                    <!-- 统计数据将在这里动态加载 -->
+                </div>
+            </section>
+        </div>
     </div>
 
     <!-- 添加交易模态框 -->

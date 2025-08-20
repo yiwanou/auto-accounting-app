@@ -30,6 +30,14 @@ class AutoAccountingApp {
       this.showTransactionModal('income');
     });
 
+    document.getElementById('view-stats-btn').addEventListener('click', () => {
+      this.showStatsPage();
+    });
+
+    document.getElementById('back-to-main-btn').addEventListener('click', () => {
+      this.showMainPage();
+    });
+
     // 加载更多按钮 - 支持移动端
     const loadMoreBtn = document.getElementById('load-more-btn');
     loadMoreBtn.addEventListener('click', (e) => {
@@ -995,6 +1003,215 @@ class AutoAccountingApp {
         document.body.removeChild(notification);
       }, 300);
     }, 3000);
+  }
+
+  // 显示统计页面
+  showStatsPage() {
+    // 隐藏主页内容
+    document.querySelector('.today-stats').style.display = 'none';
+    document.querySelector('.recent-transactions').style.display = 'none';
+    document.querySelector('.ios-integration').style.display = 'none';
+    
+    // 显示统计页面
+    document.getElementById('stats-page').style.display = 'block';
+    
+    // 切换按钮状态
+    document.getElementById('add-expense-btn').style.display = 'none';
+    document.getElementById('add-income-btn').style.display = 'none';
+    document.getElementById('view-stats-btn').style.display = 'none';
+    document.getElementById('back-to-main-btn').style.display = 'block';
+    
+    // 调整按钮布局
+    document.querySelector('.quick-actions').classList.add('stats-mode');
+    
+    // 加载统计数据
+    this.loadStatsData();
+  }
+
+  // 显示主页
+  showMainPage() {
+    // 显示主页内容
+    document.querySelector('.today-stats').style.display = 'block';
+    document.querySelector('.recent-transactions').style.display = 'block';
+    document.querySelector('.ios-integration').style.display = 'block';
+    
+    // 隐藏统计页面
+    document.getElementById('stats-page').style.display = 'none';
+    
+    // 恢复按钮状态
+    document.getElementById('add-expense-btn').style.display = 'block';
+    document.getElementById('add-income-btn').style.display = 'block';
+    document.getElementById('view-stats-btn').style.display = 'block';
+    document.getElementById('back-to-main-btn').style.display = 'none';
+    
+    // 恢复按钮布局
+    document.querySelector('.quick-actions').classList.remove('stats-mode');
+  }
+
+  // 加载统计数据
+  async loadStatsData() {
+    try {
+      const response = await fetch('/api/stats');
+      const data = await response.json();
+      
+      if (data.success) {
+        this.renderCategoryChart(data.data.categoryStats);
+        this.renderTrendChart();
+        this.renderStatsSummary(data.data.categoryStats);
+      }
+    } catch (error) {
+      console.error('加载统计数据失败:', error);
+      this.showNotification('统计数据加载失败', 'error');
+    }
+  }
+
+  // 渲染分类图表
+  renderCategoryChart(categoryStats) {
+    const ctx = document.getElementById('category-chart').getContext('2d');
+    
+    // 只显示支出分类
+    const expenseStats = categoryStats.filter(stat => stat.type === 'expense');
+    const labels = expenseStats.map(stat => `${this.getCategoryIcon(stat.category)} ${stat.category}`);
+    const data = expenseStats.map(stat => parseFloat(stat.total_amount));
+    
+    // iOS 风格配色
+    const colors = [
+      '#FF3B30', '#FF9500', '#FFCC00', '#34C759', 
+      '#00C7BE', '#007AFF', '#5856D6', '#AF52DE'
+    ];
+    
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: colors.slice(0, data.length),
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true,
+              font: {
+                size: 12
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // 渲染趋势图表 (简化版)
+  renderTrendChart() {
+    const ctx = document.getElementById('trend-chart').getContext('2d');
+    
+    // 获取最近7天的数据
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      last7Days.push(date.toISOString().split('T')[0]);
+    }
+    
+    // 模拟数据 (实际项目中应该从API获取)
+    const incomeData = [0, 1200, 0, 0, 0, 0, 0];
+    const expenseData = [25.50, 45.80, 12.40, 85.00, 30.20, 18.60, 22.40];
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: last7Days.map(date => new Date(date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })),
+        datasets: [
+          {
+            label: '收入',
+            data: incomeData,
+            borderColor: '#34C759',
+            backgroundColor: 'rgba(52, 199, 89, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: '支出',
+            data: expenseData,
+            borderColor: '#FF3B30',
+            backgroundColor: 'rgba(255, 59, 48, 0.1)',
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '€' + value.toFixed(2);
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'top'
+          }
+        }
+      }
+    });
+  }
+
+  // 渲染统计摘要
+  renderStatsSummary(categoryStats) {
+    const container = document.getElementById('stats-summary');
+    
+    const totalExpense = categoryStats
+      .filter(stat => stat.type === 'expense')
+      .reduce((sum, stat) => sum + parseFloat(stat.total_amount), 0);
+      
+    const totalIncome = categoryStats
+      .filter(stat => stat.type === 'income')
+      .reduce((sum, stat) => sum + parseFloat(stat.total_amount), 0);
+    
+    const totalTransactions = categoryStats
+      .reduce((sum, stat) => sum + parseInt(stat.count), 0);
+    
+    const avgExpense = totalExpense / (categoryStats.filter(s => s.type === 'expense').length || 1);
+    
+    container.innerHTML = `
+      <div class="stat-card expense">
+        <h3>总支出</h3>
+        <div class="value">€${totalExpense.toFixed(2)}</div>
+      </div>
+      <div class="stat-card income">
+        <h3>总收入</h3>
+        <div class="value">€${totalIncome.toFixed(2)}</div>
+      </div>
+      <div class="stat-card">
+        <h3>净收入</h3>
+        <div class="value">€${(totalIncome - totalExpense).toFixed(2)}</div>
+      </div>
+      <div class="stat-card">
+        <h3>交易笔数</h3>
+        <div class="value">${totalTransactions}</div>
+      </div>
+      <div class="stat-card">
+        <h3>平均支出</h3>
+        <div class="value">€${avgExpense.toFixed(2)}</div>
+      </div>
+      <div class="stat-card">
+        <h3>最大支出分类</h3>
+        <div class="value">${categoryStats.find(s => s.type === 'expense')?.category || 'N/A'}</div>
+      </div>
+    `;
   }
 
   // 注册Service Worker支持离线使用
