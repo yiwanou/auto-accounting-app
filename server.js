@@ -8,7 +8,6 @@ const port = process.env.PORT || 3000;
 // 中间件
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // 安全中间件
 app.use((req, res, next) => {
@@ -17,6 +16,13 @@ app.use((req, res, next) => {
   res.header('X-XSS-Protection', '1; mode=block');
   next();
 });
+
+// 静态文件服务 - 添加缓存控制和错误处理
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1h',
+  etag: true,
+  lastModified: true
+}));
 
 // 数据库初始化
 let dbInitialized = false;
@@ -35,6 +41,27 @@ app.get('/health', (req, res) => {
 // 主页
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 显式静态文件路由（备用方案）
+app.get('/css/style.css', (req, res) => {
+  res.type('text/css');
+  res.sendFile(path.join(__dirname, 'public', 'css', 'style.css'));
+});
+
+app.get('/js/app.js', (req, res) => {
+  res.type('text/javascript');
+  res.sendFile(path.join(__dirname, 'public', 'js', 'app.js'));
+});
+
+app.get('/manifest.json', (req, res) => {
+  res.type('application/json');
+  res.sendFile(path.join(__dirname, 'public', 'manifest.json'));
+});
+
+app.get('/sw.js', (req, res) => {
+  res.type('text/javascript');
+  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
 });
 
 // 获取交易记录
