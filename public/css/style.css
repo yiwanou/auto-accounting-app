@@ -76,8 +76,8 @@ body {
 .quick-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-gap: 15px;
-  padding: 25px;
+  grid-gap: 20px;
+  padding: 30px;
   background: transparent;
 }
 
@@ -435,28 +435,57 @@ body {
 
 /* 表单样式 */
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 6px;
-  font-weight: 500;
+  margin-bottom: 8px;
+  font-weight: 600;
   color: #1d1d1f;
+  font-size: 0.95rem;
+}
+
+.required {
+  color: #FF3B30;
 }
 
 .form-group input, .form-group select, .form-group textarea {
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 16px;
   border: 2px solid #e5e5e7;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
-  transition: border-color 0.2s ease;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
   outline: none;
   border-color: #007AFF;
+  background: #ffffff;
+  transform: scale(1.02);
+  box-shadow: 0 4px 15px rgba(0, 122, 255, 0.1);
+}
+
+.form-group input.error, .form-group select.error {
+  border-color: #FF3B30;
+  background: rgba(255, 59, 48, 0.05);
+}
+
+.error-message {
+  color: #FF3B30;
+  font-size: 0.85rem;
+  margin-top: 6px;
+  min-height: 20px;
+  font-weight: 500;
+}
+
+.form-group input::placeholder {
+  color: #8E8E93;
+  opacity: 1;
 }
 
 .form-group textarea {
@@ -466,22 +495,37 @@ body {
 
 .submit-btn {
   width: 100%;
-  padding: 16px;
+  padding: 20px;
   background: #007AFF;
   color: white;
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  border-radius: 16px;
+  font-size: 1.2rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.1s ease, transform 0.1s ease;
   -webkit-appearance: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   user-select: none;
-  min-height: 50px;
+  -webkit-user-select: none;
+  min-height: 64px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* iOS触摸优化 */
+  -webkit-touch-callout: none;
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  outline: none;
+  border: 2px solid transparent;
+  
+  /* 确保按钮可点击 */
+  pointer-events: auto;
 }
 
 .submit-btn:hover {
@@ -489,21 +533,28 @@ body {
 }
 
 .submit-btn:active {
-  background: #004499;
-  transform: scale(0.98);
+  background: #004499 !important;
+  transform: scale(0.96) !important;
 }
 
 .submit-btn:disabled {
-  background: #8E8E93;
+  background: #8E8E93 !important;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
-/* 为移动端添加更大的触摸区域 */
+.submit-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
+}
+
+/* 移动端优化 */
 @media (max-width: 768px) {
   .submit-btn {
-    padding: 18px;
-    font-size: 1.2rem;
-    min-height: 55px;
+    padding: 22px;
+    font-size: 1.3rem;
+    min-height: 64px;
+    border-radius: 20px;
   }
 }
 

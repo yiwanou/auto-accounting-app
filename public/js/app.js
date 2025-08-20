@@ -29,14 +29,6 @@ class AutoAccountingApp {
       this.showTransactionModal('income');
     });
 
-    document.getElementById('scan-sms-btn').addEventListener('click', () => {
-      this.showSMSModal();
-    });
-
-    document.getElementById('test-applepay-btn').addEventListener('click', () => {
-      this.showApplePayModal();
-    });
-
     // 加载更多按钮 - 支持移动端
     const loadMoreBtn = document.getElementById('load-more-btn');
     loadMoreBtn.addEventListener('click', (e) => {
@@ -66,39 +58,9 @@ class AutoAccountingApp {
       });
     });
 
-    // 表单提交 - 支持移动端
-    const transactionForm = document.getElementById('transaction-form');
-    transactionForm.addEventListener('submit', (e) => {
-      this.handleTransactionSubmit(e);
-    });
-    
-    // 为移动端添加触摸事件处理
-    const submitBtn = transactionForm.querySelector('.submit-btn');
-    if (submitBtn) {
-      // 添加触摸反馈
-      submitBtn.addEventListener('touchstart', function() {
-        this.style.transform = 'scale(0.95)';
-      });
-      
-      submitBtn.addEventListener('touchend', function() {
-        setTimeout(() => {
-          this.style.transform = 'scale(1)';
-        }, 150);
-      });
-      
-      // 防止双击缩放
-      submitBtn.addEventListener('touchend', function(e) {
-        e.preventDefault();
-      });
-    }
+    // 表单提交处理
+    this.setupFormValidation();
 
-    document.getElementById('sms-form').addEventListener('submit', (e) => {
-      this.handleSMSSubmit(e);
-    });
-
-    document.getElementById('applepay-form').addEventListener('submit', (e) => {
-      this.handleApplePaySubmit(e);
-    });
 
     // 点击模态框外部关闭
     window.addEventListener('click', (e) => {
@@ -314,48 +276,180 @@ class AutoAccountingApp {
     modal.style.display = 'block';
   }
 
-  showSMSModal() {
-    const modal = document.getElementById('sms-modal');
-    modal.style.display = 'block';
-  }
 
-  showApplePayModal() {
-    const modal = document.getElementById('applepay-modal');
-    document.getElementById('applepay-result').style.display = 'none';
-    modal.style.display = 'block';
+  setupFormValidation() {
+    const form = document.getElementById('transaction-form');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    // 表单提交处理
+    form.addEventListener('submit', (e) => this.handleFormSubmit(e));
+    
+    // iOS触摸优化
+    this.addMobileTouchSupport(submitBtn);
+    
+    // 实时验证
+    const inputs = form.querySelectorAll('input[required], select[required]');
+    inputs.forEach(input => {
+      input.addEventListener('blur', () => this.validateField(input));
+      input.addEventListener('input', () => this.clearFieldError(input));
+    });
   }
-
-  async handleTransactionSubmit(e) {
+  
+  addMobileTouchSupport(button) {
+    let touchStartTime = 0;
+    
+    // 触摸开始
+    button.addEventListener('touchstart', (e) => {
+      touchStartTime = Date.now();
+      button.style.transform = 'scale(0.95)';
+      button.style.backgroundColor = '#0056CC';
+    }, { passive: false });
+    
+    // 触摸结束 - 主要的点击处理
+    button.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const touchDuration = Date.now() - touchStartTime;
+      
+      // 恢复样式
+      button.style.transform = 'scale(1)';
+      button.style.backgroundColor = '#007AFF';
+      
+      // 只有在快速点击时才触发表单提交
+      if (touchDuration < 500 && !button.disabled) {
+        // 直接触发表单提交
+        const form = button.closest('form');
+        if (form) {
+          const submitEvent = new Event('submit', {
+            bubbles: true,
+            cancelable: true
+          });
+          form.dispatchEvent(submitEvent);
+        }
+      }
+    }, { passive: false });
+    
+    // 触摸移动时取消操作
+    button.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      button.style.transform = 'scale(1)';
+      button.style.backgroundColor = '#007AFF';
+    }, { passive: false });
+    
+    // 触摸取消时重置
+    button.addEventListener('touchcancel', (e) => {
+      button.style.transform = 'scale(1)';
+      button.style.backgroundColor = '#007AFF';
+    });
+    
+    // 添加点击事件作为备用
+    button.addEventListener('click', (e) => {
+      // 如果不是触摸设备，允许正常点击
+      if (!('ontouchstart' in window)) {
+        return; // 让默认行为处理
+      }
+      
+      // 对于触摸设备，防止双重触发
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
+  
+  validateField(field) {
+    const fieldName = field.name;
+    const value = field.value.trim();
+    const errorElement = document.getElementById(`${fieldName}-error`);
+    
+    let errorMessage = '';
+    
+    switch(fieldName) {
+      case 'amount':
+        if (!value) {
+          errorMessage = '请输入金额';
+        } else if (isNaN(value) || parseFloat(value) <= 0) {
+          errorMessage = '请输入有效的金额';
+        }
+        break;
+      case 'category':
+        if (!value) {
+          errorMessage = '请选择分类';
+        }
+        break;
+      case 'description':
+        if (!value) {
+          errorMessage = '请输入描述';
+        } else if (value.length > 50) {
+          errorMessage = '描述不能超过50个字符';
+        }
+        break;
+      case 'date':
+        if (!value) {
+          errorMessage = '请选择日期';
+        }
+        break;
+    }
+    
+    if (errorMessage) {
+      field.classList.add('error');
+      if (errorElement) errorElement.textContent = errorMessage;
+      return false;
+    } else {
+      field.classList.remove('error');
+      if (errorElement) errorElement.textContent = '';
+      return true;
+    }
+  }
+  
+  clearFieldError(field) {
+    field.classList.remove('error');
+    const errorElement = document.getElementById(`${field.name}-error`);
+    if (errorElement) errorElement.textContent = '';
+  }
+  
+  async handleFormSubmit(e) {
     e.preventDefault();
     e.stopPropagation();
     
+    const form = e.target;
+    const submitBtn = document.getElementById('submit-btn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const btnLoading = submitBtn.querySelector('.btn-loading');
+    
     // 防止重复提交
-    const submitBtn = e.target.querySelector('.submit-btn');
     if (submitBtn.disabled) return;
     
+    // 验证所有字段
+    const inputs = form.querySelectorAll('input[required], select[required]');
+    let isValid = true;
+    
+    inputs.forEach(input => {
+      if (!this.validateField(input)) {
+        isValid = false;
+      }
+    });
+    
+    if (!isValid) {
+      this.showNotification('请检查输入信息', 'error');
+      return;
+    }
+    
+    // 设置加载状态
     submitBtn.disabled = true;
-    submitBtn.textContent = '保存中...';
+    if (btnText) btnText.style.display = 'none';
+    if (btnLoading) btnLoading.style.display = 'block';
+    submitBtn.textContent = '⏳ 保存中...';
     
     try {
-      const formData = new FormData(e.target);
+      const formData = new FormData(form);
       const transactionData = {
         amount: parseFloat(formData.get('amount')),
         category: formData.get('category'),
-        description: formData.get('description'),
+        description: formData.get('description').trim(),
         date: formData.get('date'),
         type: formData.get('type'),
         currency: formData.get('currency') || 'EUR'
       };
-      
-      // 数据验证
-      if (!transactionData.amount || transactionData.amount <= 0) {
-        throw new Error('请输入有效的金额');
-      }
-      if (!transactionData.description.trim()) {
-        throw new Error('请输入描述');
-      }
-      
-      console.log('提交数据:', transactionData);
       
       const response = await fetch('/api/transactions', {
         method: 'POST',
@@ -365,16 +459,16 @@ class AutoAccountingApp {
         body: JSON.stringify(transactionData)
       });
       
-      console.log('响应状态:', response.status);
       const data = await response.json();
-      console.log('响应数据:', data);
       
       if (data.success) {
         // 关闭模态框
         document.getElementById('add-transaction-modal').style.display = 'none';
         
-        // 清空表单
-        e.target.reset();
+        // 清空表单和错误信息
+        form.reset();
+        form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+        form.querySelectorAll('.error-message').forEach(el => el.textContent = '');
         
         // 重新加载数据
         this.currentPage = 0;
@@ -384,160 +478,23 @@ class AutoAccountingApp {
         
         this.showNotification('交易记录添加成功', 'success');
       } else {
-        this.showNotification(data.errors ? data.errors.join(', ') : data.error || '添加失败', 'error');
+        this.showNotification(data.error || '添加失败', 'error');
       }
     } catch (error) {
       console.error('添加交易记录失败:', error);
-      this.showNotification(error.message || '添加失败，请重试', 'error');
+      this.showNotification('网络错误，请重试', 'error');
     } finally {
       // 恢复按钮状态
       submitBtn.disabled = false;
-      submitBtn.textContent = '保存';
+      if (btnText) btnText.style.display = 'block';
+      if (btnLoading) btnLoading.style.display = 'none';
+      submitBtn.innerHTML = '<span class="btn-text">💾 保存</span><span class="btn-loading" style="display: none;">⏳ 保存中...</span>';
     }
   }
 
-  async handleSMSSubmit(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const smsData = {
-      smsContent: formData.get('smsContent')
-    };
-    
-    try {
-      const response = await fetch('/api/sms/parse', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(smsData)
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // 关闭模态框
-        document.getElementById('sms-modal').style.display = 'none';
-        
-        // 清空表单
-        e.target.reset();
-        
-        // 重新加载数据
-        this.currentPage = 0;
-        await this.loadBalance();
-        await this.loadTransactions();
-        await this.loadTodayStats();
-        
-        this.showNotification(`短信解析成功: ${data.parsed.currency} ${data.parsed.amount}`, 'success');
-      } else {
-        this.showNotification(data.message || '短信解析失败', 'error');
-      }
-    } catch (error) {
-      console.error('短信解析失败:', error);
-      this.showNotification('短信解析失败，请重试', 'error');
-    }
-  }
 
-  async handleApplePaySubmit(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const applePayData = {
-      rawText: formData.get('rawText')
-    };
-    
-    try {
-      const response = await fetch('/api/transactions/apple-pay/parse', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(applePayData)
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        this.showApplePayResult(data);
-      } else {
-        this.showNotification(data.message || 'Apple Pay解析失败', 'error');
-      }
-    } catch (error) {
-      console.error('Apple Pay解析失败:', error);
-      this.showNotification('Apple Pay解析失败，请重试', 'error');
-    }
-  }
 
-  showApplePayResult(data) {
-    const resultDiv = document.getElementById('applepay-result');
-    const contentDiv = document.getElementById('result-content');
-    
-    const transaction = data.transaction;
-    const confidence = data.confidence;
-    
-    contentDiv.innerHTML = `
-      <div class="result-item">
-        <strong>商户:</strong> ${transaction.description}
-      </div>
-      <div class="result-item">
-        <strong>金额:</strong> ${transaction.formattedAmount}
-      </div>
-      <div class="result-item">
-        <strong>分类:</strong> ${transaction.category}
-      </div>
-      <div class="result-item">
-        <strong>货币:</strong> ${transaction.currency}
-      </div>
-      <div class="result-item">
-        <strong>置信度:</strong> <span class="confidence">${confidence}%</span>
-      </div>
-    `;
-    
-    resultDiv.style.display = 'block';
-    
-    // 存储数据以便确认时使用
-    this.pendingApplePayTransaction = transaction;
-    
-    // 绑定确认按钮
-    document.getElementById('confirm-applepay').onclick = () => {
-      this.confirmApplePayTransaction();
-    };
-  }
 
-  async confirmApplePayTransaction() {
-    if (!this.pendingApplePayTransaction) return;
-    
-    try {
-      const response = await fetch('/api/transactions/apple-pay', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(this.pendingApplePayTransaction)
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // 关闭模态框
-        document.getElementById('applepay-modal').style.display = 'none';
-        
-        // 重新加载数据
-        this.currentPage = 0;
-        await this.loadBalance();
-        await this.loadTransactions();
-        await this.loadTodayStats();
-        
-        this.showNotification(`智能记账成功! 置信度: ${data.confidence}%`, 'success');
-        this.pendingApplePayTransaction = null;
-      } else {
-        this.showNotification(data.message || '添加失败', 'error');
-      }
-    } catch (error) {
-      console.error('确认Apple Pay交易失败:', error);
-      this.showNotification('添加失败，请重试', 'error');
-    }
-  }
 
   checkiOSEnvironment() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
