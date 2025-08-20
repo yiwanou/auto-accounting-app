@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "jest"
+    "test": "jest",
+    "build": "npm install --production"
   },
   "dependencies": {
     "express": "^4.18.2",

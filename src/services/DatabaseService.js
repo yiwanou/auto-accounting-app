@@ -3,24 +3,31 @@ const path = require('path');
 
 class DatabaseService {
   constructor() {
-    this.dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/accounting.db');
+    // 在生产环境使用内存数据库，本地开发使用文件数据库
+    if (process.env.NODE_ENV === 'production') {
+      this.dbPath = ':memory:';
+    } else {
+      this.dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/accounting.db');
+    }
     this.db = null;
     this.init();
   }
 
   init() {
-    // 确保数据目录存在
-    const fs = require('fs');
-    const dataDir = path.dirname(this.dbPath);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    // 只有在非内存数据库时才创建目录
+    if (this.dbPath !== ':memory:') {
+      const fs = require('fs');
+      const dataDir = path.dirname(this.dbPath);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
     }
 
     this.db = new sqlite3.Database(this.dbPath, (err) => {
       if (err) {
         console.error('数据库连接失败:', err.message);
       } else {
-        console.log('数据库连接成功');
+        console.log('数据库连接成功:', this.dbPath === ':memory:' ? '内存数据库' : this.dbPath);
         this.createTables();
       }
     });
