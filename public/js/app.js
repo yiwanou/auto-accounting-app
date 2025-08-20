@@ -579,26 +579,39 @@ class AutoAccountingApp {
           </div>
           
           <div class="action-step">
-            <h4>4️⃣ 添加"获取URL内容"操作</h4>
+            <h4>4️⃣ 添加"格式化日期"操作</h4>
             <ul>
-              <li>URL：<code>${window.location.origin}/api/transactions</code></li>
+              <li>搜索"格式化日期"</li>
+              <li>日期：选择<code>当前日期</code></li>
+              <li>格式：<code>自定义</code></li>
+              <li>格式字符串：<code>yyyy-MM-dd</code></li>
+            </ul>
+          </div>
+          
+          <div class="action-step">
+            <h4>5️⃣ 添加"获取URL内容"操作</h4>
+            <ul>
+              <li>URL：<code>https://auto-accounting-app-5fnh.onrender.com/api/transactions</code></li>
               <li>方法：<code>POST</code></li>
               <li>请求体：选择<code>JSON</code></li>
-              <li>JSON内容：
+              <li>标头：
+                <pre>Content-Type: application/json</pre>
+              </li>
+              <li>JSON内容（点击"magic variable"添加变量）：
                 <pre>{
-  "amount": "询问输入的结果",
-  "category": "所选菜单项目", 
-  "description": "询问输入的结果",
+  "amount": [第一个询问输入的结果],
+  "category": [第二个询问输入的结果], 
+  "description": [第三个询问输入的结果],
   "type": "expense",
   "currency": "EUR",
-  "date": "当前日期"
+  "date": "[格式化日期的结果]"
 }</pre>
               </li>
             </ul>
           </div>
           
           <div class="action-step">
-            <h4>5️⃣ 添加"显示通知"操作</h4>
+            <h4>6️⃣ 添加"显示通知"操作</h4>
             <ul>
               <li>标题：<code>记账成功</code></li>
               <li>正文：<code>支出已记录</code></li>
@@ -617,6 +630,16 @@ class AutoAccountingApp {
         </div>
         
         <div class="tutorial-section">
+          <h3>⚠️ 重要提醒</h3>
+          <ul>
+            <li>在"获取URL内容"操作中，确保添加正确的标头</li>
+            <li>JSON格式必须严格按照上述格式，注意逗号和引号</li>
+            <li>Magic Variable（魔法变量）必须正确对应每个"询问输入"的结果</li>
+            <li>测试前请确保网络连接正常</li>
+          </ul>
+        </div>
+        
+        <div class="tutorial-section">
           <h3>✅ 使用方法</h3>
           <p>创建完成后，可以通过以下方式使用：</p>
           <ul>
@@ -624,6 +647,19 @@ class AutoAccountingApp {
             <li>添加到主屏幕作为快捷方式</li>
             <li>通过Siri语音："嘿Siri，快速记账"</li>
             <li>在控制中心添加快捷指令按钮</li>
+            <li>通过Apple Watch运行（如果支持）</li>
+          </ul>
+        </div>
+        
+        <div class="tutorial-section">
+          <h3>🔧 故障排除</h3>
+          <p>如果快捷指令无法正常工作：</p>
+          <ul>
+            <li>检查网络连接是否正常</li>
+            <li>确认URL地址输入正确</li>
+            <li>验证JSON格式是否有语法错误</li>
+            <li>确保所有Magic Variable都已正确设置</li>
+            <li>尝试在快捷指令中启用"调试模式"查看错误信息</li>
           </ul>
         </div>
         
